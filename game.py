@@ -1,6 +1,5 @@
 import pygame
 import json
-from os import getcwd
 from math import *
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
@@ -56,15 +55,14 @@ def point_block_collision(x, y):
 
 
 def rotate(x, y, ox, oy, theta):
-    '''
-
+    """
     :param x: target point's x coordinate
     :param y: target point's y coordinate
     :param ox: origin point's x coordinate
     :param oy: origin point's y coordinate
     :param theta: counterclockwise degrees by which point should be turned
     :return: x and y coordinates of target point after rotating around origin point
-    '''
+    """
     theta = radians(theta)  # Convert degrees to radians
     nx = cos(theta) * (x - ox) - sin(theta) * (y - oy) + ox
     ny = sin(theta) * (x - ox) + cos(theta) * (y - oy) + oy
@@ -232,7 +230,7 @@ while running:
     if ghost.burning:  # Is burning neccessary? Sperate 2 files? Which counter is it using?
         ghost.show(screen)
 
-    if perf_counter() - ghost.timer > 3 and perf_counter() > 3:
+    if perf_counter() - ghost.timer > 2 and perf_counter() > 3:
         ghost.burning = False
 
     pygame.display.update()
