@@ -226,7 +226,7 @@ while running:
 
     if box(ghost.x, ghost.y, ghost.x + ghost.width, ghost.y + ghost.height).intersects(flash_polygon):
         # print(f"Ow! My health is now {ghost.health}")
-        ghost.health -= 0.5
+        ghost.health -= 0.4
         ghost.burn()
 
     if ghost.burning:  # Is burning neccessary? Sperate 2 files? Which counter is it using?
