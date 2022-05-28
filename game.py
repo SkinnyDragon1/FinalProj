@@ -80,13 +80,16 @@ def flashlight(x, y, width, height, intensity, theta):
         brx, bry = x + width, y + height  # Bottom right x and y cooridnates
         blx, bly = x, y + height  # Bottom left x and y cooridnates
         ox, oy = x + width / 2, y + height / 2  # Origin point (around which points should be rotated)
-        p1, p2 = rotate(brx - width / 4, bry, ox, oy, theta), \
-                 rotate(blx + width / 4, bly, ox, oy, theta)  # Smaller side of the trapizoid
-        p3, p4 = rotate(brx + i / 4, bry + i, ox, oy, theta), \
-                 rotate(blx - i / 4, bly + i, ox, oy, theta)  # Longer side of the trapizoid
+        point1, point2 = rotate(brx - width / 4, bry, ox, oy, theta), \
+                         rotate(blx + width / 4, bly, ox, oy, theta)  # Smaller side of the trapizoid
+        point3, point4 = rotate(brx + i / 4, bry + i, ox, oy, theta), \
+                         rotate(blx - i / 4, bly + i, ox, oy, theta)  # Longer side of the trapizoid
 
-        polygon_points = [p1, p3, p4, p2]  # Add all points to list
+        polygon_points = [point1, point3, point4, point2]  # Add all points to list
         tmp_flash_polygon = Polygon(polygon_points)  # Create a polygon using points
+
+        if i <= 0:
+            return polygon_points
 
         for block_rect in block_rects:
             if tmp_flash_polygon.intersects(block_rect):
@@ -124,6 +127,7 @@ def create_map_from_file(filename):
 
 
 def get_rotation(dx, dy):
+    # trigonomical funcs are computationally expensive therefore it's faster to use indexes of a small cached list
     dx = int(dx + 1)
     dy = int(dy + 1)
     rotation_list = [[135, 180, 225],
@@ -134,7 +138,6 @@ def get_rotation(dx, dy):
 
 
 # Adding Network
-
 n = Network()
 p1 = n.getP()
 p2 = n.send(p1)
@@ -147,7 +150,6 @@ else:
 
 # -----------------------------------------------------------------------
 create_map_from_file('map.json')
-
 # Game loop
 running = True
 while running:
@@ -160,35 +162,35 @@ while running:
 
         # Keybind check
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_a:
-                p1.x_vel = -p1.speed
-
-            if event.key == pygame.K_d:
-                p1.x_vel = p1.speed
-
-            if event.key == pygame.K_w:
-                p1.y_vel = -p1.speed
-
-            if event.key == pygame.K_s:
-                p1.y_vel = p1.speed
+            # if event.key == pygame.K_a:
+            #     p1.x_vel = -p1.speed
+            #
+            # if event.key == pygame.K_d:
+            #     p1.x_vel = p1.speed
+            #
+            # if event.key == pygame.K_w:
+            #     p1.y_vel = -p1.speed
+            #
+            # if event.key == pygame.K_s:
+            #     p1.y_vel = p1.speed
 
             if event.key == pygame.K_p:
                 print(ghost.burning, ghost.timer)
 
-            if event.key == pygame.K_SPACE and p1.isHuman():
-                p1.flash_mode = 'on'
+            # if event.key == pygame.K_SPACE and p1.isHuman():
+            #     p1.flash_mode = 'on'
 
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_a and luigi.x_vel != luigi.speed:
-                p1.x_vel = 0
-            if event.key == pygame.K_d and p1.x_vel != -p1.speed:
-                p1.x_vel = 0
-            if event.key == pygame.K_w and p1.y_vel != p1.speed:
-                p1.y_vel = 0
-            if event.key == pygame.K_s and p1.y_vel != -p1.speed:
-                p1.y_vel = 0
-            if event.key == pygame.K_SPACE and p1.isHuman():
-                p1.flash_mode = 'off'
+        # if event.type == pygame.KEYUP:
+        #     if event.key == pygame.K_a and luigi.x_vel != luigi.speed:
+        #         p1.x_vel = 0
+        #     if event.key == pygame.K_d and p1.x_vel != -p1.speed:
+        #         p1.x_vel = 0
+        #     if event.key == pygame.K_w and p1.y_vel != p1.speed:
+        #         p1.y_vel = 0
+        #     if event.key == pygame.K_s and p1.y_vel != -p1.speed:
+        #         p1.y_vel = 0
+        #     if event.key == pygame.K_SPACE and p1.isHuman():
+        #         p1.flash_mode = 'off'
 
     if p1.x_vel != 0 or p1.y_vel != 0:
         p1.rotation = get_rotation(p1.x_vel / p1.speed, p1.y_vel / p1.speed)
@@ -199,7 +201,7 @@ while running:
         p1.addY(p1.y_vel)
 
     draw_blocks()
-    # pygame.draw.circle(screen, (255, 0, 0), (400, 300), 4)
+
     pygame.time.Clock().tick(60)
 
     p2 = n.send(p1)
@@ -217,12 +219,13 @@ while running:
 
     flash_polygon = Point(-1, -1)
     if luigi.flash_mode == 'on':
-        flash_polygon_points = flashlight(luigi.x, luigi.y, luigi.width, luigi.height, intensity=10, theta=luigi.rotation)
+        flash_polygon_points = flashlight(luigi.x, luigi.y, luigi.width, luigi.height, intensity=10,
+                                          theta=luigi.rotation)
         flash_polygon = Polygon(flash_polygon_points)
         pygame.draw.polygon(screen, FLASH_COLOR,
                             flash_polygon_points)
 
-    if box(ghost.x, ghost.y, ghost.x + ghost.width, ghost.y + ghost.height).intersects(flash_polygon):
+    if ghost.rect.intersects(flash_polygon):
         # print(f"Ow! My health is now {ghost.health}")
         ghost.health -= 0.4
         ghost.burn()
@@ -230,7 +233,25 @@ while running:
     if ghost.burning:  # Is burning neccessary? Sperate 2 files? Which counter is it using?
         ghost.show(screen)
 
+    if ghost.rect.intersects(luigi.rect) and not ghost.burning:
+        luigi.lives -= 1
+        print(f"Oh-a-no, i have é only {luigi.lives} lifé left")
+        luigi.setCors(1, 1)
+
     if perf_counter() - ghost.timer > 2 and perf_counter() > 3:
         ghost.burning = False
 
+    ghost.updateRect()
+    luigi.updateRect()
+    p1.execEvents()
     pygame.display.update()
+
+'''
+To-DO:
+- fix diagonal movement speed
+- see use for .burning
+- add death for player on collision with ghost
+- timer.timer()
+- add set keybinds as polymorphic
+- set pictures as constant for classes
+'''

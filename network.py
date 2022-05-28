@@ -1,5 +1,5 @@
 import socket
-import pickle
+import dill as pickle
 from typing import Union
 from player import Human, Ghost
 
@@ -16,16 +16,16 @@ class Network:
         return self.p
 
     def connect(self):
-        try:
-            self.client.connect(self.addr)
-            return pickle.loads(self.client.recv(2048))
-        except:
-            pass
+        # try:
+        self.client.connect(self.addr)
+        return pickle.loads(self.client.recv(4096))
+        # except Exception as e:
+        #     print("Error: " + str(e))
 
     def send(self, data):
         try:
             self.client.send(pickle.dumps(data))
-            return pickle.loads(self.client.recv(2048))
+            return pickle.loads(self.client.recv(4096))
 
         except socket.error as e:
             print("Error: " + str(e))

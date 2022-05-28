@@ -2,7 +2,9 @@ import socket
 from _thread import *
 from player import Player, Human, Ghost
 from time import perf_counter
-import pickle
+# noinspection PyUnresolvedReferences
+import dill as pickle
+# import pickle
 import sys
 
 server = socket.gethostbyname(socket.gethostname())  # "192.168.1.42"
@@ -27,7 +29,7 @@ def threaded_client(conn, player):
     reply = ""
     while True:
         try:
-            data = pickle.loads(conn.recv(2048))
+            data = pickle.loads(conn.recv(4096))
             players[player] = data
 
             if not data:
