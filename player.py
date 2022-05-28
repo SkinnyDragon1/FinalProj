@@ -1,6 +1,5 @@
 import pygame.image
 import pygame
-# import game
 from time import perf_counter
 from shapely.geometry import box
 from typing import Dict
@@ -51,10 +50,6 @@ class Player:
                 else:
                     self._actionkeysoff["movement"][axis][key]()
 
-        # if keys[pygame.K_SPACE]:
-        #     self._actionkeyson["flashlight"][pygame.K_SPACE](True)
-        # else:
-        #     self._actionkeysoff["flashlight"][pygame.K_SPACE](False)
 
     def show(self, screen):
         screen.blit(pygame.image.load(self.img), (self.x, self.y))

@@ -16,11 +16,11 @@ class Network:
         return self.p
 
     def connect(self):
-        # try:
-        self.client.connect(self.addr)
-        return pickle.loads(self.client.recv(4096))
-        # except Exception as e:
-        #     print("Error: " + str(e))
+        try:
+            self.client.connect(self.addr)
+            return pickle.loads(self.client.recv(4096))
+        except Exception as e:
+            print("Error: " + str(e))
 
     def send(self, data):
         try:
@@ -30,7 +30,4 @@ class Network:
         except socket.error as e:
             print("Error: " + str(e))
 
-# n = Network()
-# print(n.send("hello"))
-# print(n.send("working"))
-# print(n.getPos())
+

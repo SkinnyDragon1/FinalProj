@@ -3,7 +3,6 @@ import json
 from math import *
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
-from player import Player, Human, Ghost
 from network import Network
 from time import perf_counter
 
@@ -17,11 +16,6 @@ screen = pygame.display.set_mode((600, 450))
 pygame.display.set_caption("Luigi's Mansion Game")
 icon = pygame.image.load("game_icon.png")
 pygame.display.set_icon(icon)
-
-# luigi = Human('blank.png', -1, -1)
-# ghost = Ghost('blank.png', -1, -1)
-# p1 = Human('blank.png', -1, -1)
-# p2 = Player('blank.png', -1, -1)
 
 blocks = []
 BLOCK_COLOR = (89, 78, 77)  # Grey
@@ -160,37 +154,6 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        # Keybind check
-        if event.type == pygame.KEYDOWN:
-            # if event.key == pygame.K_a:
-            #     p1.x_vel = -p1.speed
-            #
-            # if event.key == pygame.K_d:
-            #     p1.x_vel = p1.speed
-            #
-            # if event.key == pygame.K_w:
-            #     p1.y_vel = -p1.speed
-            #
-            # if event.key == pygame.K_s:
-            #     p1.y_vel = p1.speed
-
-            if event.key == pygame.K_p:
-                print(ghost.burning, ghost.timer)
-
-            # if event.key == pygame.K_SPACE and p1.isHuman():
-            #     p1.flash_mode = 'on'
-
-        # if event.type == pygame.KEYUP:
-        #     if event.key == pygame.K_a and luigi.x_vel != luigi.speed:
-        #         p1.x_vel = 0
-        #     if event.key == pygame.K_d and p1.x_vel != -p1.speed:
-        #         p1.x_vel = 0
-        #     if event.key == pygame.K_w and p1.y_vel != p1.speed:
-        #         p1.y_vel = 0
-        #     if event.key == pygame.K_s and p1.y_vel != -p1.speed:
-        #         p1.y_vel = 0
-        #     if event.key == pygame.K_SPACE and p1.isHuman():
-        #         p1.flash_mode = 'off'
 
     if p1.x_vel != 0 or p1.y_vel != 0:
         p1.rotation = get_rotation(p1.x_vel / p1.speed, p1.y_vel / p1.speed)
