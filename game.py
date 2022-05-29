@@ -64,7 +64,8 @@ def rotate(x, y, ox, oy, theta):
     return nx, ny
 
 
-def flashlight(x, y, width, height, intensity, theta):
+def flashlight(p, intensity):
+    x, y, width, height, theta = p.x, p.y, p.width, p.height, p.rotation
     intensity *= 10  # Translate intensity level into pixels
 
     # Create a shapely box for each box in-game
@@ -135,12 +136,12 @@ def get_rotation(dx, dy):
 n = Network()
 p1 = n.getP()
 p2 = n.send(p1)
-if p1.isHuman():
-    luigi = p1
-    ghost = p2
-else:
-    luigi = p2
-    ghost = p1
+# if p1.isHuman():
+#     luigi = p1
+#     ghost = p2
+# else:
+#     luigi = p2
+#     ghost = p1
 
 # -----------------------------------------------------------------------
 create_map_from_file('map.json')
@@ -182,8 +183,7 @@ while running:
 
     flash_polygon = Point(-1, -1)
     if luigi.flash_mode == 'on':
-        flash_polygon_points = flashlight(luigi.x, luigi.y, luigi.width, luigi.height, intensity=10,
-                                          theta=luigi.rotation)
+        flash_polygon_points = flashlight(luigi, intensity=10)
         flash_polygon = Polygon(flash_polygon_points)
         pygame.draw.polygon(screen, FLASH_COLOR,
                             flash_polygon_points)
