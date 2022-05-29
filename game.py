@@ -155,7 +155,6 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-
     if p1.x_vel != 0 or p1.y_vel != 0:
         p1.rotation = get_rotation(p1.x_vel / p1.speed, p1.y_vel / p1.speed)
 
@@ -204,9 +203,9 @@ while running:
     if perf_counter() - ghost.timer > 2 and perf_counter() > 3:
         ghost.burning = False
 
+    p1.execEvents()
     ghost.updateRect()
     luigi.updateRect()
-    p1.execEvents()
     pygame.display.update()
 
 '''
@@ -216,5 +215,5 @@ To-DO:
 - add death for player on collision with ghost
 - timer.timer()
 - add set keybinds as polymorphic
-- set pictures as constant for classes
+- add health bar / life count
 '''

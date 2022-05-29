@@ -20,7 +20,7 @@ except socket.error as e:
 s.listen()
 print("Waiting for connection - Server Started")
 
-players = [Human("man.png", 1, 1, "off", 0, lives=3), Ghost("ghost (1).png", 100, 100, health=100, timer=perf_counter(), burning=False)]
+players = [Human(1, 1, "off", 0, lives=3), Ghost(100, 100, health=100, timer=perf_counter(), burning=False)]
 
 
 def threaded_client(conn, player):
