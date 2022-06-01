@@ -14,7 +14,7 @@ class Player:
         self.height = pygame.image.load(self.img).get_height()
         self.x = stx
         self.y = sty
-        self.rect = box(self.x, self.y, self.x + self.width, self.y + self.height)
+        self.box = box(self.x, self.y, self.x + self.width, self.y + self.height)
         self.x_vel = 0
         self.y_vel = 0
         self.speed = 5
@@ -50,7 +50,6 @@ class Player:
                 else:
                     self._actionkeysoff["movement"][axis][key]()
 
-
     def show(self, screen):
         screen.blit(pygame.image.load(self.img), (self.x, self.y))
 
@@ -73,8 +72,8 @@ class Player:
     def getCors(self):
         return self.x, self.y
 
-    def updateRect(self):
-        self.rect = box(self.x, self.y, self.x + self.width, self.y + self.height)
+    def updateBox(self):
+        self.box = box(self.x, self.y, self.x + self.width, self.y + self.height)
 
     def isHuman(self):
         return type(self).__name__ == 'Human'
@@ -104,7 +103,7 @@ class Human(Player):
             self.flash_mode = "on"
         else:
             self.flash_mode = "off"
-    
+
     def execEvents(self):
         super().execEvents()
         keys = pygame.key.get_pressed()

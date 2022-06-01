@@ -1,6 +1,7 @@
 import pygame
 import json
 from os import getcwd
+from shapely.geometry import box
 
 # Initializing Pygame
 pygame.init()
@@ -32,11 +33,18 @@ def create_block(x1, y1, x2, y2, color):
         x1, x2 = x2, x1
     if y2 < y1:
         y1, y2 = y2, y1
-    new_block = [x1, y1, x2, y2]
+
     width = x2 - x1
     height = y2 - y1
-    new_block.append(color)
-    new_block.append(pygame.Rect(x1, y1, width, height))
+    rect = pygame.Rect(x1, y1, width, height)
+
+    new_block = {"x1": x1,
+                 "y1": y1,
+                 "x2": x2,
+                 "y2": y2,
+                 "color": color,
+                 "rect": rect
+                 }
 
     blocks.append(new_block)
 
@@ -49,7 +57,8 @@ def create_block(x1, y1, x2, y2, color):
 
 def draw_blocks():
     for block in blocks:
-        pygame.draw.rect(screen, block[4], block[5])
+        pygame.draw.rect(screen, block["color"], block["rect"])  # block[4] --> color; block[5] --> pygame.Rect()
+
 
 # Update backup
 with open("map.json", "r") as f, open("map_backup.json", "w") as t:
