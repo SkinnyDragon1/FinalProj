@@ -1,6 +1,6 @@
 import socket
 from _thread import *
-from player import Player, Human, Ghost
+from player import Player, Human, Ghost, default_players
 from time import time
 # noinspection PyUnresolvedReferences
 import dill as pickle
@@ -20,8 +20,7 @@ except socket.error as e:
 s.listen()
 print("Waiting for connection - Server Started")
 
-players = [Human(1, 1, "off", 0, lives=3), Ghost(100, 100, health=100, timer=time(), burning=False)]
-
+players = default_players
 
 def threaded_client(conn, player):
     conn.send(pickle.dumps(players[player]))

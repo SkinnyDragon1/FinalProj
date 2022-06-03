@@ -8,6 +8,7 @@ pygame.init()
 
 # Creating the sceen
 screen = pygame.display.set_mode((800, 600))
+top_border = 100
 
 # Setting up icon and title
 pygame.display.set_caption("Map Maker")
@@ -49,7 +50,7 @@ def create_block(x1, y1, x2, y2, color):
     blocks.append(new_block)
 
     # Set up JSON writing
-    new_block_str = [x1, y1, x2, y2, color]
+    new_block_str = [x1, y1 + top_border, x2, y2 + top_border, color]
 
     json_list.append(new_block_str)
     print(json_list)
@@ -72,6 +73,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+            create_block(0, -5, screen.get_width(), -1, BLOCK_COLOR)
             with open('map.json', 'w') as f:
                 f.write(json.dumps(json_list))
 

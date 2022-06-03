@@ -9,8 +9,12 @@ from time import time
 # Initializing Pygame
 pygame.init()
 
-# Creating the sceen
-screen = pygame.display.set_mode((600, 450))
+# Creating the screen
+screen = pygame.display.set_mode((800, 600 + 100))
+left_border = 0
+top_border = 100
+right_border = screen.get_width()
+bottom_border = screen.get_height()
 
 # Setting up icon and title
 pygame.display.set_caption("Luigi's Mansion Game")
@@ -22,16 +26,15 @@ blocks = []
 BLOCK_COLOR = (89, 78, 77)  # Grey
 FLASH_COLOR = (250, 232, 92)  # Yellow
 
-
 def player_collision(x, y, width, height):
     # Wall collision
-    if x <= 0:  # Past left border
+    if x < left_border:  # Past left border
         return True
-    if x + width >= screen.get_width():  # Past right border
+    if x + width > right_border:  # Past right border
         return True
-    if y <= 0:  # Past top border
+    if y < top_border:  # Past top border
         return True
-    if y + height >= screen.get_height():  # Past bottom border
+    if y + height > bottom_border:  # Past bottom border
         return True
 
     # Block collision
@@ -149,6 +152,7 @@ running = True
 while running:
 
     screen.fill((0, 0, 0))
+    # pygame.draw.line(screen, BLOCK_COLOR, (left_border, top_border), (right_border, top_border))
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -207,7 +211,7 @@ while running:
     if ghost.box.intersects(luigi.box) and not ghost.burning:
         luigi.lives -= 1
         print(f"Oh-a-no, i have é only {luigi.lives} lifé left")
-        luigi.setCors(1, 1)
+        luigi.setCors(0, 100)
 
     if time() - ghost.timer > 2:
         ghost.burning = False
@@ -222,4 +226,6 @@ To-DO:
 - add start screen (waiting for player to connect)
 - add sounds
 - typehint funcs
+- make better flashlight
+- add ghost dash ability
 '''

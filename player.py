@@ -125,3 +125,5 @@ class Ghost(Player):
     def burn(self):
         self.timer = time()
         self.burning = True
+
+default_players = [Human(0, 100, "off", 0, lives=3), Ghost(100, 200, health=100, timer=time(), burning=False)]
