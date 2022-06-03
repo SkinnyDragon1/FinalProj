@@ -25,6 +25,13 @@ pygame.display.set_icon(icon)
 blocks = []
 BLOCK_COLOR = (89, 78, 77)  # Grey
 FLASH_COLOR = (250, 232, 92)  # Yellow
+HEALTH_BAR_COLOR = (219, 65, 50)  # Red
+
+
+def health_bar(health: float):
+    w, h = right_border, bottom_border
+    pygame.draw.rect(screen, HEALTH_BAR_COLOR, pygame.Rect(0.72 * w, 0.025 * h, 0.27 * w * health / 100, 0.025 * h))
+
 
 def player_collision(x, y, width, height):
     # Wall collision
@@ -152,7 +159,6 @@ running = True
 while running:
 
     screen.fill((0, 0, 0))
-    # pygame.draw.line(screen, BLOCK_COLOR, (left_border, top_border), (right_border, top_border))
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -216,6 +222,7 @@ while running:
     if time() - ghost.timer > 2:
         ghost.burning = False
 
+    health_bar(ghost.health)
     p1.updateBox()
     pygame.display.update()
 
