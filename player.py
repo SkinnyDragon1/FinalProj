@@ -1,6 +1,6 @@
 import pygame.image
 import pygame
-from time import perf_counter
+from time import time
 from shapely.geometry import box
 from typing import Dict
 
@@ -123,5 +123,5 @@ class Ghost(Player):
         self.burning = burning
 
     def burn(self):
-        self.timer = perf_counter()
+        self.timer = time()
         self.burning = True

@@ -4,7 +4,7 @@ from math import *
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
 from network import Network
-from time import perf_counter
+from time import time
 
 # Initializing Pygame
 pygame.init()
@@ -209,7 +209,7 @@ while running:
         print(f"Oh-a-no, i have é only {luigi.lives} lifé left")
         luigi.setCors(1, 1)
 
-    if perf_counter() - ghost.timer > 2 and perf_counter() > 3:
+    if time() - ghost.timer > 2:
         ghost.burning = False
 
     p1.updateBox()
@@ -217,7 +217,6 @@ while running:
 
 '''
 To-DO:
-- make sure no problems with difference between ghost timer and server timer
 - add health bar / life count
 - add Game Over screen
 - add start screen (waiting for player to connect)

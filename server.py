@@ -1,7 +1,7 @@
 import socket
 from _thread import *
 from player import Player, Human, Ghost
-from time import perf_counter
+from time import time
 # noinspection PyUnresolvedReferences
 import dill as pickle
 # import pickle
@@ -20,7 +20,7 @@ except socket.error as e:
 s.listen()
 print("Waiting for connection - Server Started")
 
-players = [Human(1, 1, "off", 0, lives=3), Ghost(100, 100, health=100, timer=perf_counter(), burning=False)]
+players = [Human(1, 1, "off", 0, lives=3), Ghost(100, 100, health=100, timer=time(), burning=False)]
 
 
 def threaded_client(conn, player):
