@@ -154,13 +154,23 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    p1.execEvents()
+
     if p1.x_vel != 0 or p1.y_vel != 0:
         p1.rotation = get_rotation(p1.x_vel / p1.speed, p1.y_vel / p1.speed)
 
-    if not player_collision(p1.x + p1.x_vel, p1.y, p1.width, p1.height):
-        p1.addX(p1.x_vel)
-    if not player_collision(p1.x, p1.y + p1.y_vel, p1.width, p1.height):
-        p1.addY(p1.y_vel)
+    xlegal = not player_collision(p1.x + p1.x_vel, p1.y, p1.width, p1.height)
+    ylegal = not player_collision(p1.x, p1.y + p1.y_vel, p1.width, p1.height)
+
+    if p1.x_vel != 0 and p1.y_vel != 0 and xlegal and ylegal:
+        p1.addX(p1.x_vel / 1.414)
+        p1.addY(p1.y_vel / 1.414)
+
+    else:
+        if xlegal:
+            p1.addX(p1.x_vel)
+        if ylegal:
+            p1.addY(p1.y_vel)
 
     draw_blocks()
 
@@ -202,15 +212,15 @@ while running:
     if perf_counter() - ghost.timer > 2 and perf_counter() > 3:
         ghost.burning = False
 
-    p1.execEvents()
     p1.updateBox()
     pygame.display.update()
 
 '''
 To-DO:
-- fix diagonal movement speed
 - make sure no problems with difference between ghost timer and server timer
 - add health bar / life count
 - add Game Over screen
 - add start screen (waiting for player to connect)
+- add sounds
+- typehint funcs
 '''
