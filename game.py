@@ -1,6 +1,6 @@
 import pygame
 import json
-from math import *
+from math import radians, cos, sin, sqrt
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
 from typing import Tuple
@@ -215,8 +215,8 @@ while running:
         luigi = p2
         ghost = p1
 
-    if p2.isHuman():  # Show opponent only if it is the human (ghost shouldn't appear on human's screen)
-        p2.show(screen)
+    if p2.isHuman():
+        p2.show(screen)  # Show opponent only if it is the human
     p1.show(screen)
 
     flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
@@ -230,16 +230,22 @@ while running:
         ghost.health -= 0.5  # Lower ghost's health
         ghost.burn()  # Update ghost object to be burning
 
-    if ghost.burning:
-        ghost.show(screen)  # Show the ghost on screen if it's burning
-
-    if ghost.box.intersects(luigi.box) and not ghost.burning:  # If the ghost is invisible and is touching the human
+    if ghost.box.intersects(luigi.box) and not ghost.visible:  # If the ghost is invisible and is touching the human
         luigi.lives -= 1  # Lower one of the human's lives
-        print(f"Oh-a-no, i have é only {luigi.lives} lifé left")
+        print(f"Oh-a-no, i have é only {luigi.lives} livés é left")
         luigi.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
 
-    if time() - ghost.timer > 2:  # If the ghost has been burning for longer than 2 seconds
+    # If the ghost is burning and the distance between the human and the ghost is smaller than 120 pixels
+    if ghost.burning and sqrt(((luigi.x + luigi.width / 2) - (ghost.x + ghost.width / 2)) ** 2 +
+                              ((luigi.y + luigi.height / 2) - (ghost.y + ghost.height / 2)) ** 2) < 120:
+        ghost.timer = time()  # Reset the ghost timer (so that he stays visible on screen)
+
+    if time() - ghost.timer > 2 and ghost.burning:  # If the ghost has been burning for longer than 2 seconds
         ghost.burning = False  # Stop burning
+        ghost.speed = 5  # Revert to normal speed
+
+    if ghost.visible:
+        ghost.show(screen)  # Show the ghost on screen if it's burning or dashing
 
     health_bar(ghost.health)  # Display ghost health bar
     draw_hearts(luigi.lives)  # Display human lives
@@ -252,8 +258,8 @@ To-DO:
 - add Game Over screen
 - add start screen (waiting for player to connect)
 - add sounds
-- typehint funcs
 - make better flashlight
 - add ghost dash ability
-- ghost stays burning while human is close
+- add indicator if ghost is visible (on ghost's screen)
+- ghost should be faster when burnt
 '''

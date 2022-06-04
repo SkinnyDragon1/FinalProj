@@ -116,18 +116,49 @@ class Human(Player):
 
 class Ghost(Player):
 
-    def __init__(self, stx, sty, health, timer, burning):
+    def __init__(self, stx, sty, health, timer, burning, visible):
         super().__init__("ghost (1).png", stx, sty)  # Inherits from player class
         self.health = health
         self.timer = timer
         self.burning = burning
+        self.visible = visible
+
+        _playerkeysoff = {
+            "dash": {pygame.K_SPACE: lambda dashing: self.dash(dashing)}
+        }
+        _playerkeyson = {
+            "dash": {pygame.K_SPACE: lambda dashing: self.dash(dashing)}
+        }
+        self._actionkeyson.update(_playerkeyson)
+        self._actionkeysoff.update(_playerkeysoff)
 
     def burn(self):
         self.timer = time()
         self.burning = True
+        self.visible = True
+        self.speed = 7
+
+    def dash(self, dashing):
+        if dashing:
+            self.speed = 8
+            self.visible = True
+        else:
+            self.speed = 5
+            if not self.burning:
+                self.visible = False
+
+    def execEvents(self):
+        super().execEvents()
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_SPACE]:
+            self._actionkeyson["dash"][pygame.K_SPACE](True)
+        else:
+            self._actionkeysoff["dash"][pygame.K_SPACE](False)
 
 
 human_spawnpoint = (0, 100)
 ghost_spawnpoint = (100, 200)
-default_players = [Human(human_spawnpoint[0], human_spawnpoint[1], "off", 0, lives=3),
-                   Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1], health=100, timer=time(), burning=False)]
+default_players = [Human(human_spawnpoint[0], human_spawnpoint[1], flash_mode="off", rotation=0, lives=3),
+                   Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1], health=100, timer=time(), burning=False,
+                         visible=False)]
