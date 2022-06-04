@@ -21,35 +21,35 @@ class Player:
         self.speed = 5
         self.rotation = 0
 
-        self._actionkeyson: Dict[str, any] = {
+        self._actionkeys: Dict[str, any] = {
             "movement": {
-                "xaxis": {pygame.K_a: lambda: self.setXvel(-self.speed),
-                          pygame.K_d: lambda: self.setXvel(self.speed)},
+                "xaxis": {pygame.K_a: lambda speed: self.setXvel(-speed),
+                          pygame.K_d: lambda speed: self.setXvel(speed)},
 
-                "yaxis": {pygame.K_w: lambda: self.setYvel(-self.speed),
-                          pygame.K_s: lambda: self.setYvel(self.speed)}
+                "yaxis": {pygame.K_w: lambda speed: self.setYvel(-speed),
+                          pygame.K_s: lambda speed: self.setYvel(speed)}
             }
         }
-        self._actionkeysoff: Dict[str, any] = {
-            "movement": {
-                "xaxis": {pygame.K_a: lambda: self.setXvel(0),
-                          pygame.K_d: lambda: self.setXvel(0)},
-
-                "yaxis": {pygame.K_w: lambda: self.setYvel(0),
-                          pygame.K_s: lambda: self.setYvel(0)}
-            }
-        }
+        # self._actionkeysoff: Dict[str, any] = {
+        #     "movement": {
+        #         "xaxis": {pygame.K_a: lambda: self.setXvel(0),
+        #                   pygame.K_d: lambda: self.setXvel(0)},
+        #
+        #         "yaxis": {pygame.K_w: lambda: self.setYvel(0),
+        #                   pygame.K_s: lambda: self.setYvel(0)}
+        #     }
+        # }
 
     def execEvents(self):
         keys = pygame.key.get_pressed()
 
-        for axis in self._actionkeyson["movement"]:
-            for key in self._actionkeyson["movement"][axis]:
+        for axis in self._actionkeys["movement"]:
+            for key in self._actionkeys["movement"][axis]:
                 if keys[key]:
-                    self._actionkeyson["movement"][axis][key]()
+                    self._actionkeys["movement"][axis][key](self.speed)
                     break
                 else:
-                    self._actionkeysoff["movement"][axis][key]()
+                    self._actionkeys["movement"][axis][key](0)
 
     def show(self, screen):
         screen.blit(pygame.image.load(self.img), (self.x, self.y))
@@ -85,20 +85,16 @@ class Player:
 
 
 class Human(Player):
-    def __init__(self, stx, sty, flash_mode, rotation, lives):
+    def __init__(self, stx, sty):
         super().__init__("man.png", stx, sty)  # Inherits from player class
-        self.rotation = rotation
-        self.flash_mode = flash_mode
-        self.lives = lives
+        self.rotation = 0
+        self.flash_mode = "off"
+        self.lives = 3
 
-        _playerkeysoff = {
+        _playerkeys = {
             "flashlight": {pygame.K_SPACE: lambda state: self.flashlight(state)}
         }
-        _playerkeyson = {
-            "flashlight": {pygame.K_SPACE: lambda state: self.flashlight(state)}
-        }
-        self._actionkeyson.update(_playerkeyson)
-        self._actionkeysoff.update(_playerkeysoff)
+        self._actionkeys.update(_playerkeys)
 
     def flashlight(self, state):
         if state:
@@ -111,28 +107,24 @@ class Human(Player):
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_SPACE]:
-            self._actionkeyson["flashlight"][pygame.K_SPACE](True)
+            self._actionkeys["flashlight"][pygame.K_SPACE](True)
         else:
-            self._actionkeysoff["flashlight"][pygame.K_SPACE](False)
+            self._actionkeys["flashlight"][pygame.K_SPACE](False)
 
 
 class Ghost(Player):
 
-    def __init__(self, stx, sty, health, timer, burning, visible):
+    def __init__(self, stx, sty):
         super().__init__("ghost (1).png", stx, sty)  # Inherits from player class
-        self.health = health
-        self.timer = timer
-        self.burning = burning
-        self.visible = visible
+        self.health = 100
+        self.timer = time()
+        self.burning = False
+        self.visible = False
 
-        _playerkeysoff = {
+        _playerkeys = {
             "dash": {pygame.K_SPACE: lambda dashing: self.dash(dashing)}
         }
-        _playerkeyson = {
-            "dash": {pygame.K_SPACE: lambda dashing: self.dash(dashing)}
-        }
-        self._actionkeyson.update(_playerkeyson)
-        self._actionkeysoff.update(_playerkeysoff)
+        self._actionkeys.update(_playerkeys)
 
     def burn(self):
         self.timer = time()
@@ -144,23 +136,21 @@ class Ghost(Player):
         if dashing:
             self.speed = 8
             self.visible = True
-        else:
+        elif not self.burning:
+            self.visible = False
             self.speed = 5
-            if not self.burning:
-                self.visible = False
 
     def execEvents(self):
         super().execEvents()
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_SPACE]:
-            self._actionkeyson["dash"][pygame.K_SPACE](True)
+            self._actionkeys["dash"][pygame.K_SPACE](True)
         else:
-            self._actionkeysoff["dash"][pygame.K_SPACE](False)
+            self._actionkeys["dash"][pygame.K_SPACE](False)
 
 
 human_spawnpoint = (0, 100)
 ghost_spawnpoint = (100, 200)
-default_players = [Human(human_spawnpoint[0], human_spawnpoint[1], flash_mode="off", rotation=0, lives=3),
-                   Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1], health=100, timer=time(), burning=False,
-                         visible=False)]
+default_players = [Human(human_spawnpoint[0], human_spawnpoint[1]),
+                   Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1])]

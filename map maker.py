@@ -1,12 +1,12 @@
 import pygame
 import json
 from os import getcwd
-from game import top_border
 # Initializing Pygame
 pygame.init()
 
 # Creating the sceen
 screen = pygame.display.set_mode((800, 600))
+top_border = 100
 
 # Setting up icon and title
 pygame.display.set_caption("Map Maker")

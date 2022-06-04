@@ -226,9 +226,9 @@ while running:
         pygame.draw.polygon(screen, FLASH_COLOR, flash_polygon_points)  # Draw flashlight based on trapizoid
 
     if ghost.box.intersects(flash_polygon):  # If the flashlight hit the ghost
-        print(f"Ow! My health is now {ghost.health}")
         ghost.health -= 0.5  # Lower ghost's health
         ghost.burn()  # Update ghost object to be burning
+        print(f"Ow! My health is now {ghost.health} and my speed is {ghost.speed}")
 
     if ghost.box.intersects(luigi.box) and not ghost.visible:  # If the ghost is invisible and is touching the human
         luigi.lives -= 1  # Lower one of the human's lives
@@ -245,7 +245,6 @@ while running:
 
     if ghost.visible:
         ghost.show(screen)  # Show the ghost on screen if it's burning or dashing
-
     health_bar(ghost.health)  # Display ghost health bar
     draw_hearts(luigi.lives)  # Display human lives
     p1.updateBox()  # Update player hitbox
