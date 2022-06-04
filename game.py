@@ -10,11 +10,14 @@ from time import time
 pygame.init()
 
 # Creating the screen
-screen = pygame.display.set_mode((800, 600 + 100))
+play_size = [800, 600]
+
 left_border = 0
 top_border = 100
-right_border = screen.get_width()
-bottom_border = screen.get_height()
+right_border = left_border + play_size[0]
+bottom_border = top_border + play_size[1]
+
+screen = pygame.display.set_mode((left_border + play_size[0], top_border + play_size[1]))
 
 # Setting up icon and title
 pygame.display.set_caption("Luigi's Mansion Game")
@@ -26,11 +29,22 @@ blocks = []
 BLOCK_COLOR = (89, 78, 77)  # Grey
 FLASH_COLOR = (250, 232, 92)  # Yellow
 HEALTH_BAR_COLOR = (219, 65, 50)  # Red
+HEART_IMG = pygame.image.load("heart.png")  # 40x40 pixels
 
 
 def health_bar(health: float):
-    w, h = right_border, bottom_border
-    pygame.draw.rect(screen, HEALTH_BAR_COLOR, pygame.Rect(0.72 * w, 0.025 * h, 0.27 * w * health / 100, 0.025 * h))
+    w, h, t = right_border - left_border, bottom_border - top_border, top_border  # Initialize necessary variables
+    hb_left = 0.7 * w  # Calculate starting point of health bar relative to game width
+    hb_size = [0.27 * w * health / 100, 0.04 * h]  # Calculate health bar dimensions based on game height and health
+    # Draw centered health bar
+    pygame.draw.rect(screen, HEALTH_BAR_COLOR,
+                     pygame.Rect(hb_left, (t - hb_size[1]) / 2, hb_size[0], hb_size[1]))
+
+
+def draw_hearts(lives: int):
+    for life in range(lives):  # Draw 1 heart for every life
+        # Center hearts and keep distance between them
+        screen.blit(HEART_IMG, (25 + life * 45, (top_border - HEART_IMG.get_height()) / 2))
 
 
 def player_collision(x, y, width, height):
@@ -63,14 +77,14 @@ def rotate(x, y, ox, oy, theta):
     :return: x and y coordinates of target point after rotating around origin point
     """
     theta = radians(theta)  # Convert degrees to radians
-    nx = cos(theta) * (x - ox) - sin(theta) * (y - oy) + ox
-    ny = sin(theta) * (x - ox) + cos(theta) * (y - oy) + oy
+    nx = cos(theta) * (x - ox) - sin(theta) * (y - oy) + ox  # Mathematical calculation for new point's x coordinate
+    ny = sin(theta) * (x - ox) + cos(theta) * (y - oy) + oy  # Mathematical calculation for new point's y coordinate
 
     return nx, ny
 
 
 def flashlight(p, intensity):
-    x, y, width, height, theta = p.x, p.y, p.width, p.height, p.rotation
+    x, y, width, height, theta = p.x, p.y, p.width, p.height, p.rotation  # Initialize necessary variables
     intensity *= 10  # Translate intensity level into pixels
 
     # Create a shapely box for each box in-game
@@ -223,6 +237,7 @@ while running:
         ghost.burning = False
 
     health_bar(ghost.health)
+    draw_hearts(luigi.lives)
     p1.updateBox()
     pygame.display.update()
 
@@ -235,4 +250,5 @@ To-DO:
 - typehint funcs
 - make better flashlight
 - add ghost dash ability
+- ghost stays burning while human is close
 '''
