@@ -71,7 +71,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-            create_block(0, -5, screen.get_width(), -1, BLOCK_COLOR)
+            create_block(0, -5, screen.get_width(), 0, BLOCK_COLOR)
             with open('map.json', 'w') as f:
                 f.write(json.dumps(json_list))
 

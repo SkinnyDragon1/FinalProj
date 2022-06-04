@@ -150,7 +150,7 @@ class Ghost(Player):
             self._actionkeys["dash"][pygame.K_SPACE](False)
 
 
-human_spawnpoint = (0, 100)
+human_spawnpoint = (0, 101)
 ghost_spawnpoint = (100, 200)
 default_players = [Human(human_spawnpoint[0], human_spawnpoint[1]),
                    Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1])]

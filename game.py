@@ -1,13 +1,13 @@
 import pygame
 import json
-from math import radians, cos, sin, sqrt
+from math import radians, cos, sin
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
 from typing import Tuple
 
 from network import Network
 from time import time
-from player import human_spawnpoint, ghost_spawnpoint
+from player import human_spawnpoint
 
 # Initializing Pygame
 pygame.init()
@@ -28,12 +28,16 @@ pygame.display.set_caption("Luigi's Mansion Game")
 icon = pygame.image.load("game_icon.png")
 pygame.display.set_icon(icon)
 
-# Initialize list for walls in map and set game colors
+# Initialize list for walls in map
 blocks = []
+# Initialize game colors
 BLOCK_COLOR = (89, 78, 77)  # Grey
 FLASH_COLOR = (250, 232, 92)  # Yellow
 HEALTH_BAR_COLOR = (219, 65, 50)  # Red
+# Initialize game pictures
 HEART_IMG = pygame.image.load("heart.png")  # 40x40 pixels
+FIRE_IMG = pygame.image.load("fire.png")  # 64x64 pixels
+EYE_IMG = pygame.image.load("eye.png")  # 64x64 pixels
 
 
 def health_bar(health: float):
@@ -49,6 +53,16 @@ def draw_hearts(lives: int):
     for life in range(lives):  # Draw 1 heart for every life
         # Center hearts and keep distance between them
         screen.blit(HEART_IMG, (25 + life * 45, (top_border - HEART_IMG.get_height()) / 2))
+
+
+def show_icons(p):
+    w = right_border - left_border
+    if p.isGhost():  # Show only if current player is the ghost
+        if p.burning:
+            screen.blit(FIRE_IMG, (w / 2 - 36 - FIRE_IMG.get_width(),
+                                   (top_border - FIRE_IMG.get_height()) / 2))  # Draw fire icon relative to screen size
+        if p.visible:
+            screen.blit(EYE_IMG, (w / 2, (top_border - EYE_IMG.get_height()) / 2))  # Draw eye icon relative to screen size
 
 
 def player_collision(x: int, y: int, width: float, height: float):
@@ -245,9 +259,11 @@ while running:
 
     if ghost.visible:
         ghost.show(screen)  # Show the ghost on screen if it's burning or dashing
+
     health_bar(ghost.health)  # Display ghost health bar
     draw_hearts(luigi.lives)  # Display human lives
     p1.updateBox()  # Update player hitbox
+    show_icons(p1)  # Draw necessary icons (only if p1 is the ghost)
     pygame.display.update()  # Update screen
     pygame.time.Clock().tick(60)  # Tick the game a constant amount (60fps)
 
@@ -257,7 +273,4 @@ To-DO:
 - add start screen (waiting for player to connect)
 - add sounds
 - make better flashlight
-- add ghost dash ability
-- add indicator if ghost is visible (on ghost's screen)
-- ghost should be faster when burnt
 '''
