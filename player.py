@@ -1,3 +1,4 @@
+from math import sqrt
 import pygame.image
 import pygame
 from time import time
@@ -69,8 +70,9 @@ class Player:
         self.x = x
         self.y = y
 
-    def getCors(self):
-        return self.x, self.y
+    def distance(self, p):
+        return sqrt(((self.x + self.width / 2) - (p.x + p.width / 2)) ** 2 +
+                    ((self.y + self.height / 2) - (p.y + p.height / 2)) ** 2)
 
     def updateBox(self):
         self.box = box(self.x, self.y, self.x + self.width, self.y + self.height)

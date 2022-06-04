@@ -236,8 +236,7 @@ while running:
         luigi.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
 
     # If the ghost is burning and the distance between the human and the ghost is smaller than 120 pixels
-    if ghost.burning and sqrt(((luigi.x + luigi.width / 2) - (ghost.x + ghost.width / 2)) ** 2 +
-                              ((luigi.y + luigi.height / 2) - (ghost.y + ghost.height / 2)) ** 2) < 120:
+    if ghost.burning and ghost.distance(luigi) < 120:
         ghost.timer = time()  # Reset the ghost timer (so that he stays visible on screen)
 
     if time() - ghost.timer > 2 and ghost.burning:  # If the ghost has been burning for longer than 2 seconds
