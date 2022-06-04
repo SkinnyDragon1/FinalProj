@@ -3,20 +3,24 @@ import json
 from math import *
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
+from typing import Tuple
+
 from network import Network
 from time import time
+from player import human_spawnpoint, ghost_spawnpoint
 
 # Initializing Pygame
 pygame.init()
 
-# Creating the screen
-play_size = [800, 600]
+# Creating the borders
+play_size = (800, 600)
 
 left_border = 0
 top_border = 100
 right_border = left_border + play_size[0]
 bottom_border = top_border + play_size[1]
 
+# Create screen based on play size dimensions and borders
 screen = pygame.display.set_mode((left_border + play_size[0], top_border + play_size[1]))
 
 # Setting up icon and title
@@ -47,7 +51,7 @@ def draw_hearts(lives: int):
         screen.blit(HEART_IMG, (25 + life * 45, (top_border - HEART_IMG.get_height()) / 2))
 
 
-def player_collision(x, y, width, height):
+def player_collision(x: int, y: int, width: float, height: float):
     # Wall collision
     if x < left_border:  # Past left border
         return True
@@ -59,7 +63,7 @@ def player_collision(x, y, width, height):
         return True
 
     # Block collision
-    block_boxes = [block["block_box"] for block in blocks]
+    block_boxes = [block["block_box"] for block in blocks]  # Create a shapely box for each box in-game
     player_box = box(x, y, x + width, y + height)
 
     for block_box in block_boxes:  # Check for each block
@@ -67,7 +71,7 @@ def player_collision(x, y, width, height):
             return True
 
 
-def rotate(x, y, ox, oy, theta):
+def rotate(x: int, y: int, ox: int, oy: int, theta: int) -> Tuple[float, float]:
     """
     :param x: target point's x coordinate
     :param y: target point's y coordinate
@@ -80,10 +84,10 @@ def rotate(x, y, ox, oy, theta):
     nx = cos(theta) * (x - ox) - sin(theta) * (y - oy) + ox  # Mathematical calculation for new point's x coordinate
     ny = sin(theta) * (x - ox) + cos(theta) * (y - oy) + oy  # Mathematical calculation for new point's y coordinate
 
-    return nx, ny
+    return nx, ny  # Return new points
 
 
-def flashlight(p, intensity):
+def flashlight(p, intensity: int):
     x, y, width, height, theta = p.x, p.y, p.width, p.height, p.rotation  # Initialize necessary variables
     intensity *= 10  # Translate intensity level into pixels
 
@@ -102,30 +106,32 @@ def flashlight(p, intensity):
         polygon_points = [point1, point3, point4, point2]  # Add all points to list
         tmp_flash_polygon = Polygon(polygon_points)  # Create a polygon using points
 
-        if i <= 0:
+        if i <= 0:  # Recursion stop condition
             return polygon_points
 
         for block_box in block_boxes:
-            if tmp_flash_polygon.intersects(block_box):
-                return get_flash_polygon(i - 1)
+            if tmp_flash_polygon.intersects(block_box):  # If the flashlight intersects one of the walls
+                return get_flash_polygon(i - 1)  # Return a smaller flashlight
 
-        return polygon_points
+        return polygon_points  # Return trapizoid verticies
 
-    return get_flash_polygon(intensity)
+    return get_flash_polygon(intensity)  # Call recursion function with initial flashlight intensity
 
 
-def create_block(x1, y1, x2, y2, color):
-    global blocks
+def create_block(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, int]):
+    global blocks  # Make block list global so that the function will update it and not a local instance
     if x2 < x1:
-        x1, x2 = x2, x1
+        x1, x2 = x2, x1  # Update variables so x2 is always bigger than x1
     if y2 < y1:
-        y1, y2 = y2, y1
+        y1, y2 = y2, y1  # Update variables so y2 is always bigger than y1
 
+    # Initialize necessary variables
     width = x2 - x1
     height = y2 - y1
     rect = pygame.Rect(x1, y1, width, height)
     block_box = box(x1, y1, x2, y2)
 
+    # Create block dict out of variables
     new_block = {"x1": x1,
                  "y1": y1,
                  "x2": x2,
@@ -134,27 +140,28 @@ def create_block(x1, y1, x2, y2, color):
                  "rect": rect,
                  "block_box": block_box
                  }
-    blocks.append(new_block)
+
+    blocks.append(new_block)  # Append new block to total block list
 
 
 def draw_blocks():
-    for block in blocks:
-        pygame.draw.rect(screen, block["color"], block["rect"])
+    for block in blocks:  # Loop over all the blocks
+        pygame.draw.rect(screen, block["color"], block["rect"])  # Draw block
 
 
-def create_map_from_file(filename):
-    with open(filename, 'r') as f:
-        file_block_list = json.load(f)
-        for item in file_block_list:
-            create_block(item[0], item[1], item[2], item[3], item[4])
-        f.close()
+def create_map_from_file(filename: str):
+    with open(filename, 'r') as f:  # Open file in reading mode
+        file_block_list = json.load(f)  # Load file info with json
+        for item in file_block_list:  # Loop over all blocks
+            create_block(item[0], item[1], item[2], item[3], item[4])  # Create block from file info
+        f.close()  # Close the file
 
 
-def get_rotation(dx, dy):
+def get_rotation(dx: float, dy: float):
     # trigonomical funcs are computationally expensive therefore it's faster to use indexes of a small cached list
-    dx = int(dx + 1)
-    dy = int(dy + 1)
-    rotation_list = [[135, 180, 225],
+    dx = int(dx + 1)  # Increment dx to match list indexing
+    dy = int(dy + 1)  # Increment dy to match list indexing
+    rotation_list = [[135, 180, 225],  # Create 2D list which contains possible rotation angles
                      [90, 0, 270],
                      [45, 0, 315]]
 
@@ -162,46 +169,45 @@ def get_rotation(dx, dy):
 
 
 # Adding Network
-n = Network()
-p1 = n.getP()
-p2 = n.send(p1)
+n = Network()  # Create network instance
+p1 = n.getP()  # Get player 1 info from server
+p2 = n.send(p1)  # Get player 2 info from server
 
 # -----------------------------------------------------------------------
-create_map_from_file('map.json')
+create_map_from_file('map.json')  # Create map blocks based on file
+
 # Game loop
 running = True
 while running:
 
-    screen.fill((0, 0, 0))
+    screen.fill((0, 0, 0))  # Set screen to black
+    draw_blocks()  # Draw walls
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+    for event in pygame.event.get():  # Loop over pygame events
+        if event.type == pygame.QUIT:  # Check for quit event (click on x button)
+            running = False  # Stop the while loop
 
-    p1.execEvents()
+    p1.execEvents()  # Check for player events (movement, flashlight, etc)
 
-    if p1.x_vel != 0 or p1.y_vel != 0:
-        p1.rotation = get_rotation(p1.x_vel / p1.speed, p1.y_vel / p1.speed)
+    if p1.x_vel != 0 or p1.y_vel != 0:  # If player is in motion
+        p1.rotation = get_rotation(p1.x_vel / p1.speed, p1.y_vel / p1.speed)  # Update rotation
 
-    xlegal = not player_collision(p1.x + p1.x_vel, p1.y, p1.width, p1.height)
-    ylegal = not player_collision(p1.x, p1.y + p1.y_vel, p1.width, p1.height)
+    xlegal = not player_collision(p1.x + p1.x_vel, p1.y, p1.width, p1.height)  # Check if x-axis movement is legal
+    ylegal = not player_collision(p1.x, p1.y + p1.y_vel, p1.width, p1.height)  # Check if y-axis movement is legal
 
-    if p1.x_vel != 0 and p1.y_vel != 0 and xlegal and ylegal:
-        p1.addX(p1.x_vel / 1.414)
+    if p1.x_vel != 0 and p1.y_vel != 0 and xlegal and ylegal:  # If the player is moving diagonally
+        p1.addX(p1.x_vel / 1.414)  # Slow down speed in each axis taking into account the pythagorean theorem
         p1.addY(p1.y_vel / 1.414)
 
     else:
         if xlegal:
-            p1.addX(p1.x_vel)
+            p1.addX(p1.x_vel)  # Move player in the x-axis
         if ylegal:
-            p1.addY(p1.y_vel)
+            p1.addY(p1.y_vel)  # Move player in the y-axis
 
-    draw_blocks()
+    p2 = n.send(p1)  # Send player 1's info to server and update player 2 on screen based on server response
 
-    pygame.time.Clock().tick(60)
-
-    p2 = n.send(p1)
-
+    #  Check which player is the human and which one is the ghost
     if p1.isHuman():
         luigi = p1
         ghost = p2
@@ -209,41 +215,40 @@ while running:
         luigi = p2
         ghost = p1
 
-    if p2.isHuman():
+    if p2.isHuman():  # Show opponent only if it is the human (ghost shouldn't appear on human's screen)
         p2.show(screen)
     p1.show(screen)
 
-    flash_polygon = Point(-1, -1)
-    if luigi.flash_mode == 'on':
-        flash_polygon_points = flashlight(luigi, intensity=10)
-        flash_polygon = Polygon(flash_polygon_points)
-        pygame.draw.polygon(screen, FLASH_COLOR,
-                            flash_polygon_points)
+    flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
+    if luigi.flash_mode == 'on':  # Check if flashlight is on
+        flash_polygon_points = flashlight(luigi, intensity=10)  # Get flashlight trapizoid verticies
+        flash_polygon = Polygon(flash_polygon_points)  # Create trapizoid out of verticies
+        pygame.draw.polygon(screen, FLASH_COLOR, flash_polygon_points)  # Draw flashlight based on trapizoid
 
-    if ghost.box.intersects(flash_polygon):
+    if ghost.box.intersects(flash_polygon):  # If the flashlight hit the ghost
         print(f"Ow! My health is now {ghost.health}")
-        ghost.health -= 0.5
-        ghost.burn()
+        ghost.health -= 0.5  # Lower ghost's health
+        ghost.burn()  # Update ghost object to be burning
 
     if ghost.burning:
-        ghost.show(screen)
+        ghost.show(screen)  # Show the ghost on screen if it's burning
 
-    if ghost.box.intersects(luigi.box) and not ghost.burning:
-        luigi.lives -= 1
+    if ghost.box.intersects(luigi.box) and not ghost.burning:  # If the ghost is invisible and is touching the human
+        luigi.lives -= 1  # Lower one of the human's lives
         print(f"Oh-a-no, i have é only {luigi.lives} lifé left")
-        luigi.setCors(0, 100)
+        luigi.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
 
-    if time() - ghost.timer > 2:
-        ghost.burning = False
+    if time() - ghost.timer > 2:  # If the ghost has been burning for longer than 2 seconds
+        ghost.burning = False  # Stop burning
 
-    health_bar(ghost.health)
-    draw_hearts(luigi.lives)
-    p1.updateBox()
-    pygame.display.update()
+    health_bar(ghost.health)  # Display ghost health bar
+    draw_hearts(luigi.lives)  # Display human lives
+    p1.updateBox()  # Update player hitbox
+    pygame.display.update()  # Update screen
+    pygame.time.Clock().tick(60)  # Tick the game a constant amount (60fps)
 
 '''
 To-DO:
-- add health bar / life count
 - add Game Over screen
 - add start screen (waiting for player to connect)
 - add sounds
