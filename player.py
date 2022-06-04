@@ -126,4 +126,8 @@ class Ghost(Player):
         self.timer = time()
         self.burning = True
 
-default_players = [Human(0, 100, "off", 0, lives=3), Ghost(100, 200, health=100, timer=time(), burning=False)]
+
+human_spawnpoint = (0, 100)
+ghost_spawnpoint = (100, 200)
+default_players = [Human(human_spawnpoint[0], human_spawnpoint[1], "off", 0, lives=3),
+                   Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1], health=100, timer=time(), burning=False)]
