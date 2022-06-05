@@ -1,7 +1,7 @@
 import socket
 import dill as pickle
 from typing import Union
-from player import Human, Ghost
+from player import Human, Ghost, Player
 
 
 class Network:
@@ -12,7 +12,7 @@ class Network:
         self.addr = (self.server, self.port)
         self.p = self.connect()
 
-    def getP(self) -> Union[Human, Ghost]:
+    def getP(self) -> Player:
         return self.p
 
     def connect(self):
@@ -20,6 +20,14 @@ class Network:
             self.client.connect(self.addr)
             return pickle.loads(self.client.recv(4096))
         except Exception as e:
+            print("Error: " + str(e))
+
+    def sendPlayer(self, data) -> Player:
+        try:
+            self.client.send(pickle.dumps(data))
+            return pickle.loads(self.client.recv(4096))
+
+        except socket.error as e:
             print("Error: " + str(e))
 
     def send(self, data):

@@ -3,11 +3,11 @@ import json
 from math import radians, cos, sin
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
-from typing import Tuple
+from typing import Tuple, cast
 
 from network import Network
 from time import time
-from player import human_spawnpoint
+from player import human_spawnpoint, Player, Human, Ghost
 
 # Initializing Pygame
 pygame.init()
@@ -34,11 +34,17 @@ blocks = []
 BLOCK_COLOR = (89, 78, 77)  # Grey
 FLASH_COLOR = (250, 232, 92)  # Yellow
 HEALTH_BAR_COLOR = (219, 65, 50)  # Red
-# Initialize game pictures
+# Load game images
 HEART_IMG = pygame.image.load("heart.png")  # 40x40 pixels
 FIRE_IMG = pygame.image.load("fire.png")  # 64x64 pixels
 EYE_IMG = pygame.image.load("eye.png")  # 64x64 pixels
-
+# Load game sounds and music
+pygame.mixer.music.load("sounds/Background Music.mp3")
+caught_by_ghost = pygame.mixer.Sound("sounds/Caught By Ghost.mp3")
+ghost_wins = pygame.mixer.Sound("sounds/Ghost Wins.mp3")
+ghost_loses = pygame.mixer.Sound("sounds/Ghost Loses.mp3")
+ghost_8 = pygame.mixer.Sound("sounds/Ghost 8.mp3")  # length = 0.75s
+last_played = time() - 0.75  # Keep track of last time played so that sounds don't overlap
 
 def health_bar(health: float):
     w, h, t = right_border - left_border, bottom_border - top_border, top_border  # Initialize necessary variables
@@ -181,6 +187,37 @@ def get_rotation(dx: float, dy: float):
 
     return rotation_list[dy][dx]
 
+def check_for_end(player1: Player, h: Human, g: Ghost):
+    if h.lives <= 0:
+        winner = g
+        game_over(player1, winner)
+    if g.health <= 0:
+        winner = h
+        game_over(player1, winner)
+
+
+def game_over(player1: Player, winner: Player):
+    global running
+    if player1 == winner:
+        result_text = "You Won!"
+        clr = (0, 255, 0)
+    else:
+        result_text = "You Lost!"
+        clr = (255, 0, 0)
+
+    font = pygame.font.SysFont("comicsans", 90)
+    text = font.render(result_text, True, clr)
+    screen.blit(text, (200, 300))
+
+    end_sound = ghost_wins if winner.isGhost() else ghost_loses
+    pygame.mixer.music.stop()
+    pygame.mixer.stop()
+    pygame.mixer.Sound.play(end_sound)
+
+    pygame.display.update()
+
+    running = False
+
 
 # Adding Network
 n = Network()  # Create network instance
@@ -189,6 +226,8 @@ p2 = n.send(p1)  # Get player 2 info from server
 
 # -----------------------------------------------------------------------
 create_map_from_file('map.json')  # Create map blocks based on file
+
+pygame.mixer.music.play(-1)  # Play music on repeat
 
 # Game loop
 running = True
@@ -223,11 +262,11 @@ while running:
 
     #  Check which player is the human and which one is the ghost
     if p1.isHuman():
-        luigi = p1
-        ghost = p2
+        luigi: Human = cast(Human, p1)
+        ghost: Ghost = cast(Ghost, p2)
     else:
-        luigi = p2
-        ghost = p1
+        luigi: Human = cast(Human, p2)
+        ghost: Ghost = cast(Ghost, p1)
 
     if p2.isHuman():
         p2.show(screen)  # Show opponent only if it is the human
@@ -242,10 +281,14 @@ while running:
     if ghost.box.intersects(flash_polygon):  # If the flashlight hit the ghost
         ghost.health -= 0.5  # Lower ghost's health
         ghost.burn()  # Update ghost object to be burning
-        print(f"Ow! My health is now {ghost.health} and my speed is {ghost.speed}")
+        print(f"Ow! My health is now {ghost.health}")
+        if time() - last_played > 0.8:  # Check if enough time has passed since last time sound effect was played
+            last_played = time()  # Update last time played
+            pygame.mixer.Sound.play(ghost_8)
 
     if ghost.box.intersects(luigi.box) and not ghost.visible:  # If the ghost is invisible and is touching the human
         luigi.lives -= 1  # Lower one of the human's lives
+        pygame.mixer.Sound.play(caught_by_ghost)  # Play sound effect
         print(f"Oh-a-no, i have é only {luigi.lives} livés é left")
         luigi.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
 
@@ -264,8 +307,22 @@ while running:
     draw_hearts(luigi.lives)  # Display human lives
     p1.updateBox()  # Update player hitbox
     show_icons(p1)  # Draw necessary icons (only if p1 is the ghost)
+    check_for_end(p1, luigi, ghost)
     pygame.display.update()  # Update screen
     pygame.time.Clock().tick(60)  # Tick the game a constant amount (60fps)
+
+for _ in range(60 * 15):
+    quit_game = False
+
+    for event in pygame.event.get():  # Loop over pygame events
+        if event.type == pygame.QUIT:  # Check for quit event (click on x button)
+            quit_game = True
+
+    pygame.time.Clock().tick(60)
+
+    if quit_game:
+        break
+
 
 '''
 To-DO:
@@ -273,4 +330,6 @@ To-DO:
 - add start screen (waiting for player to connect)
 - add sounds
 - make better flashlight
+- add A*
+- add human invincibility on respawn
 '''

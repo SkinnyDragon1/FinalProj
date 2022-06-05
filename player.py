@@ -6,6 +6,7 @@ from shapely.geometry import box
 from typing import Dict
 
 pygame.init()
+ghost_dash = pygame.mixer.Sound("sounds/Ghost Dash.wav")
 
 
 class Player:
@@ -120,9 +121,10 @@ class Ghost(Player):
         self.timer = time()
         self.burning = False
         self.visible = False
+        self.dashing = False
 
         _playerkeys = {
-            "dash": {pygame.K_SPACE: lambda dashing: self.dash(dashing)}
+            "dash": {pygame.K_SPACE: lambda d: self.dash(d)}
         }
         self._actionkeys.update(_playerkeys)
 
@@ -132,13 +134,18 @@ class Ghost(Player):
         self.visible = True
         self.speed = 7
 
-    def dash(self, dashing):
-        if dashing:
-            self.speed = 8
-            self.visible = True
-        elif not self.burning:
-            self.visible = False
-            self.speed = 5
+    def dash(self, d):
+        if d:
+            if not self.dashing:
+                self.speed = 8
+                self.dashing = True
+                self.visible = True
+                pygame.mixer.Sound.play(ghost_dash)
+        else:
+            self.dashing = False
+            if not self.burning:
+                self.visible = False
+                self.speed = 5
 
     def execEvents(self):
         super().execEvents()
