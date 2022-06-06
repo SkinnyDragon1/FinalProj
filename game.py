@@ -46,6 +46,7 @@ ghost_loses = pygame.mixer.Sound("sounds/Ghost Loses.mp3")
 ghost_8 = pygame.mixer.Sound("sounds/Ghost 8.mp3")  # length = 0.75s
 last_played = time() - 0.75  # Keep track of last time played so that sounds don't overlap
 
+
 def health_bar(health: float):
     w, h, t = right_border - left_border, bottom_border - top_border, top_border  # Initialize necessary variables
     hb_left = 0.7 * w  # Calculate starting point of health bar relative to game width
@@ -68,7 +69,8 @@ def show_icons(p):
             screen.blit(FIRE_IMG, (w / 2 - 36 - FIRE_IMG.get_width(),
                                    (top_border - FIRE_IMG.get_height()) / 2))  # Draw fire icon relative to screen size
         if p.visible:
-            screen.blit(EYE_IMG, (w / 2, (top_border - EYE_IMG.get_height()) / 2))  # Draw eye icon relative to screen size
+            screen.blit(EYE_IMG,
+                        (w / 2, (top_border - EYE_IMG.get_height()) / 2))  # Draw eye icon relative to screen size
 
 
 def player_collision(x: int, y: int, width: float, height: float):
@@ -187,39 +189,41 @@ def get_rotation(dx: float, dy: float):
 
     return rotation_list[dy][dx]
 
+
 def check_for_end(player1: Player, h: Human, g: Ghost):
-    if h.lives <= 0:
-        winner = g
-        game_over(player1, winner)
-    if g.health <= 0:
-        winner = h
-        game_over(player1, winner)
+    if h.lives <= 0:  # If human has lost
+        winner = g  # Set winner to ghost
+        return game_over(player1, winner)  # Call game over function with ghost as winner
+    if g.health <= 0:  # If ghost has lost
+        winner = h  # Set winner to human
+        return game_over(player1, winner)  # Call game over function with human as winner
+
+    return True
 
 
 def game_over(player1: Player, winner: Player):
-    global running
-    if player1 == winner:
-        result_text = "You Won!"
-        clr = (0, 255, 0)
-    else:
-        result_text = "You Lost!"
-        clr = (255, 0, 0)
+    if player1 == winner:  # If current player is the winner
+        result_text = "You Won!"  # Set matching text
+        clr = (0, 255, 0)  # Set matching color (green)
+    else:  # If current player is the loser
+        result_text = "You Lost!"  # Set matching text
+        clr = (255, 0, 0)  # Set matching color (red)
 
-    font = pygame.font.SysFont("comicsans", 90)
-    text = font.render(result_text, True, clr)
-    screen.blit(text, (200, 300))
+    font = pygame.font.SysFont("comicsans", int(screen.get_width() / 10))  # Set font and size (relative to screen width)
+    text = font.render(result_text, True, clr)  # Create text
+    screen.blit(text, (200, 300))  # Put text on screen
 
-    end_sound = ghost_wins if winner.isGhost() else ghost_loses
-    pygame.mixer.music.stop()
-    pygame.mixer.stop()
-    pygame.mixer.Sound.play(end_sound)
+    end_sound = ghost_wins if winner.isGhost() else ghost_loses  # Set matching end sound
+    pygame.mixer.music.stop()  # Stop the music that is currently playing
+    pygame.mixer.stop()  # Stop all sound effects
+    pygame.mixer.Sound.play(end_sound)  # Play end game sound
 
-    pygame.display.update()
+    pygame.display.update()  # Update the screen
 
-    running = False
+    return False  # Return false (the game should stop running)
 
 
-# Adding Network
+# Setting up connection to server
 n = Network()  # Create network instance
 p1 = n.getP()  # Get player 1 info from server
 p2 = n.send(p1)  # Get player 2 info from server
@@ -231,7 +235,7 @@ pygame.mixer.music.play(-1)  # Play music on repeat
 
 # Game loop
 running = True
-while running:
+while running:  # Game should keep looping until game over
 
     screen.fill((0, 0, 0))  # Set screen to black
     draw_blocks()  # Draw walls
@@ -307,7 +311,7 @@ while running:
     draw_hearts(luigi.lives)  # Display human lives
     p1.updateBox()  # Update player hitbox
     show_icons(p1)  # Draw necessary icons (only if p1 is the ghost)
-    check_for_end(p1, luigi, ghost)
+    running = check_for_end(p1, luigi, ghost)  # Check if game has ended and if so stop the while loop
     pygame.display.update()  # Update screen
     pygame.time.Clock().tick(60)  # Tick the game a constant amount (60fps)
 
@@ -323,7 +327,6 @@ for _ in range(60 * 15):
     if quit_game:
         break
 
-
 '''
 To-DO:
 - add Game Over screen
@@ -332,4 +335,5 @@ To-DO:
 - make better flashlight
 - add A*
 - add human invincibility on respawn
+- add radar indicator for human distance from ghost
 '''
