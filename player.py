@@ -116,7 +116,7 @@ class Human(Player):
 class Ghost(Player):
 
     def __init__(self, stx, sty):
-        super().__init__("ghost (1).png", stx, sty)  # Inherits from player class
+        super().__init__("ghost.png", stx, sty)  # Inherits from player class
         self.health = 100
         self.timer = time()
         self.burning = False
