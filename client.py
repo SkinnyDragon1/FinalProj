@@ -24,7 +24,7 @@ screen = pygame.display.set_mode((left_border + play_size[0], top_border + play_
 
 # Setting up icon and title
 pygame.display.set_caption("Luigi's Mansion Game")
-icon = pygame.image.load("game_icon.png")
+icon = pygame.image.load("images/game_icon.png")
 pygame.display.set_icon(icon)
 
 # Initialize list for walls in map
@@ -34,9 +34,9 @@ BLOCK_COLOR = (89, 78, 77)  # Grey
 FLASH_COLOR = (250, 232, 92)  # Yellow
 HEALTH_BAR_COLOR = (219, 65, 50)  # Red
 # Load game images
-HEART_IMG = pygame.image.load("heart.png")  # 40x40 pixels
-FIRE_IMG = pygame.image.load("fire.png")  # 64x64 pixels
-EYE_IMG = pygame.image.load("eye.png")  # 64x64 pixels
+HEART_IMG = pygame.image.load("images/heart.png")  # 40x40 pixels
+FIRE_IMG = pygame.image.load("images/fire.png")  # 64x64 pixels
+EYE_IMG = pygame.image.load("images/eye.png")  # 64x64 pixels
 # Load game sounds and music
 pygame.mixer.music.load("sounds/Background Music.mp3")
 caught_by_ghost = pygame.mixer.Sound("sounds/Caught By Ghost.mp3")

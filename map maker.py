@@ -1,6 +1,5 @@
 import pygame
 import json
-from os import getcwd
 # Initializing Pygame
 pygame.init()
 
@@ -10,7 +9,7 @@ top_border = 100
 
 # Setting up icon and title
 pygame.display.set_caption("Map Maker")
-icon = pygame.image.load(f"{getcwd()}/maze_icon.png")
+icon = pygame.image.load("images/maze_icon.png")
 pygame.display.set_icon(icon)
 
 # Set up block coordinates

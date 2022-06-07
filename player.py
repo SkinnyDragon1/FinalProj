@@ -87,7 +87,7 @@ class Player:
 
 class Human(Player):
     def __init__(self, stx, sty):
-        super().__init__("man.png", stx, sty)  # Inherits from player class
+        super().__init__("images/man.png", stx, sty)  # Inherits from player class
         self.rotation = 0
         self.flash_mode = "off"
         self.lives = 3
@@ -116,7 +116,7 @@ class Human(Player):
 class Ghost(Player):
 
     def __init__(self, stx, sty):
-        super().__init__("ghost.png", stx, sty)  # Inherits from player class
+        super().__init__("images/ghost.png", stx, sty)  # Inherits from player class
         self.health = 100
         self.timer = time()
         self.burning = False
