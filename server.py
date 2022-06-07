@@ -1,11 +1,10 @@
 import socket
 from _thread import *
+from time import sleep
+
 from player import Player, Human, Ghost, default_players
-from time import time
-# noinspection PyUnresolvedReferences
 import dill as pickle
-# import pickle
-import sys
+from game import Game
 
 server = socket.gethostbyname(socket.gethostname())  # "192.168.1.42"
 port = 5555
@@ -21,9 +20,14 @@ s.listen()
 print("Waiting for connection - Server Started")
 
 players = default_players
+games = {}
+idCount = 0
 
-def threaded_client(conn, player):
-    conn.send(pickle.dumps(players[player]))
+def threaded_client(conn: socket.socket, player, game_id):
+    while not games[game_id].connected():
+        conn.send(pickle.dumps((players[player], games[game_id])))
+        sleep(0.5)
+    conn.send(pickle.dumps((players[player], games[game_id])))
 
     reply = ""
     while True:
@@ -52,10 +56,19 @@ def threaded_client(conn, player):
     conn.close()
 
 
-current_player = 0
 while True:
-    conn, addr = s.accept()
+    connection, addr = s.accept()
     print("Connected to:", addr)
 
-    start_new_thread(threaded_client, (conn, current_player))
-    current_player += 1
+    idCount += 1
+    current_player = 0
+    gameID = (idCount-1) // 2
+
+    if idCount % 2 == 1:
+        games[gameID] = Game(gameID)
+        print(f'Creating a new game with id {gameID}')
+    else:
+        games[gameID].ready = True
+        current_player = 1
+
+    start_new_thread(threaded_client, (connection, current_player, gameID))
