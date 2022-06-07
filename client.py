@@ -3,7 +3,7 @@ import json
 from math import radians, cos, sin
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
-from typing import Tuple, cast
+from typing import Tuple, cast, List
 from network import Network
 from time import time
 from player import human_spawnpoint, Player, Human, Ghost
@@ -38,7 +38,7 @@ HEART_IMG = pygame.image.load("images/heart.png")  # 40x40 pixels
 FIRE_IMG = pygame.image.load("images/fire.png")  # 64x64 pixels
 EYE_IMG = pygame.image.load("images/eye.png")  # 64x64 pixels
 # Load game sounds and music
-pygame.mixer.music.load("sounds/Background Music.mp3")
+pygame.mixer.music.load("sounds/Opening.mp3")
 caught_by_ghost = pygame.mixer.Sound("sounds/Caught By Ghost.mp3")
 ghost_wins = pygame.mixer.Sound("sounds/Ghost Wins.mp3")
 ghost_loses = pygame.mixer.Sound("sounds/Ghost Loses.mp3")
@@ -46,7 +46,7 @@ ghost_8 = pygame.mixer.Sound("sounds/Ghost 8.mp3")  # length = 0.75s
 last_played = time() - 0.75  # Keep track of last time played so that sounds don't overlap
 
 
-def waiting_room():
+def waiting_room() -> None:
     screen.fill((0, 0, 0))  # Set screen to black
 
     font = pygame.font.SysFont("comicsans", int(screen.get_width() / 12))  # Set font and size (relative to screen width)
@@ -60,7 +60,7 @@ def waiting_room():
             exit()  # Quit the game
 
 
-def health_bar(health: float):
+def health_bar(health: float) -> None:
     w, h, t = right_border - left_border, bottom_border - top_border, top_border  # Initialize necessary variables
     hb_left = 0.7 * w  # Calculate starting point of health bar relative to game width
     hb_size = [0.27 * w * health / 100, 0.04 * h]  # Calculate health bar dimensions based on game height and health
@@ -69,13 +69,13 @@ def health_bar(health: float):
                      pygame.Rect(hb_left, (t - hb_size[1]) / 2, hb_size[0], hb_size[1]))
 
 
-def draw_hearts(lives: int):
+def draw_hearts(lives: int) -> None:
     for life in range(lives):  # Draw 1 heart for every life
         # Center hearts and keep distance between them
         screen.blit(HEART_IMG, (25 + life * 45, (top_border - HEART_IMG.get_height()) / 2))
 
 
-def show_icons(p):
+def show_icons(p) -> None:
     w = right_border - left_border
     if p.isGhost():  # Show only if current player is the ghost
         if p.burning:
@@ -86,7 +86,7 @@ def show_icons(p):
                         (w / 2, (top_border - EYE_IMG.get_height()) / 2))  # Draw eye icon relative to screen size
 
 
-def player_collision(x: int, y: int, width: float, height: float):
+def player_collision(x: int, y: int, width: float, height: float) -> bool:
     # Wall collision
     if x < left_border:  # Past left border
         return True
@@ -122,7 +122,7 @@ def rotate(x: int, y: int, ox: int, oy: int, theta: int) -> Tuple[float, float]:
     return nx, ny  # Return new points
 
 
-def flashlight(p, intensity: int):
+def flashlight(p, intensity: int) -> List[Tuple[float, float]]:
     x, y, width, height, theta = p.x, p.y, p.width, p.height, p.rotation  # Initialize necessary variables
     intensity *= 10  # Translate intensity level into pixels
 
@@ -135,8 +135,8 @@ def flashlight(p, intensity: int):
         ox, oy = x + width / 2, y + height / 2  # Origin point (around which points should be rotated)
         point1, point2 = rotate(brx - width / 4, bry, ox, oy, theta), \
                          rotate(blx + width / 4, bly, ox, oy, theta)  # Smaller side of the trapizoid
-        point3, point4 = rotate(brx + i / 4, bry + i, ox, oy, theta), \
-                         rotate(blx - i / 4, bly + i, ox, oy, theta)  # Longer side of the trapizoid
+        point3, point4 = rotate(brx + i / 8, bry + i, ox, oy, theta), \
+                         rotate(blx - i / 8, bly + i, ox, oy, theta)  # Longer side of the trapizoid
 
         polygon_points = [point1, point3, point4, point2]  # Add all points to list
         tmp_flash_polygon = Polygon(polygon_points)  # Create a polygon using points
@@ -153,7 +153,7 @@ def flashlight(p, intensity: int):
     return get_flash_polygon(intensity)  # Call recursion function with initial flashlight intensity
 
 
-def create_block(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, int]):
+def create_block(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, int]) -> None:
     global blocks  # Make block list global so that the function will update it and not a local instance
     if x2 < x1:
         x1, x2 = x2, x1  # Update variables so x2 is always bigger than x1
@@ -179,12 +179,12 @@ def create_block(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, int]
     blocks.append(new_block)  # Append new block to total block list
 
 
-def draw_blocks():
+def draw_blocks() -> None:
     for block in blocks:  # Loop over all the blocks
         pygame.draw.rect(screen, block["color"], block["rect"])  # Draw block
 
 
-def create_map_from_file(filename: str):
+def create_map_from_file(filename: str) -> None:
     with open(filename, 'r') as f:  # Open file in reading mode
         file_block_list = json.load(f)  # Load file info with json
         for item in file_block_list:  # Loop over all blocks
@@ -192,7 +192,13 @@ def create_map_from_file(filename: str):
         f.close()  # Close the file
 
 
-def get_rotation(dx: float, dy: float):
+def get_rotation(dx: float, dy: float) -> int:
+    '''
+
+    :param dx: direction of x-velocity; either +1, -1, or 0 depending on the direction of the player in the x-axis
+    :param dy: direction of y-velocity; either +1, -1, or 0 depending on the direction of the player in the y-axis
+    :return: the angle in which the player is looking, in increments of 45
+    '''
     # trigonomical funcs are computationally expensive therefore it's faster to use indexes of a small cached list
     dx = int(dx + 1)  # Increment dx to match list indexing
     dy = int(dy + 1)  # Increment dy to match list indexing
@@ -203,7 +209,7 @@ def get_rotation(dx: float, dy: float):
     return rotation_list[dy][dx]
 
 
-def check_for_end(player1: Player, h: Human, g: Ghost):
+def check_for_end(player1: Player, h: Human, g: Ghost) -> bool:
     if h.lives <= 0:  # If human has lost
         winner = g  # Set winner to ghost
         return game_over(player1, winner)  # Call game over function with ghost as winner
@@ -214,7 +220,7 @@ def check_for_end(player1: Player, h: Human, g: Ghost):
     return True
 
 
-def game_over(player1: Player, winner: Player):
+def game_over(player1: Player, winner: Player) -> bool:
     if player1 == winner:  # If current player is the winner
         result_text = "You Won!"  # Set matching text
         clr = (0, 255, 0)  # Set matching color (green)
@@ -250,6 +256,7 @@ n = Network()  # Create network instance
 p1, game = n.getWaitingState()  # Get player 1 info from server
 # p2 = n.send(p1)  # Get player 2 info from server
 
+pygame.mixer.music.play(-1)  # Play music on repeat
 while not game.connected():
     p1, game = n.getWaitingState()
     waiting_room()
@@ -257,6 +264,9 @@ while not game.connected():
 # -----------------------------------------------------------------------
 create_map_from_file('map.json')  # Create map blocks based on file
 
+pygame.mixer.music.stop()  # Stop previous music
+pygame.mixer.music.unload()  # Unload it from mixer
+pygame.mixer.music.load("sounds/Background Music.mp3")  # Load new music
 pygame.mixer.music.play(-1)  # Play music on repeat
 
 # Game loop
@@ -268,12 +278,16 @@ while running:  # Game should keep looping until game over
 
     for e in pygame.event.get():  # Loop over pygame events
         if e.type == pygame.QUIT:  # Check for quit event (click on x button)
-            running = False  # Stop the while loop
+            quit()
 
     p1.execEvents()  # Check for player events (movement, flashlight, etc)
 
-    if p1.x_vel != 0 or p1.y_vel != 0:  # If player is in motion
-        p1.rotation = get_rotation(p1.x_vel / p1.speed, p1.y_vel / p1.speed)  # Update rotation
+    if p1.x_vel != 0 and p1.y_vel != 0:  # If player is in motion
+        p1.rotation = get_rotation(p1.x_vel / abs(p1.x_vel), p1.y_vel / abs(p1.y_vel))  # Update rotation
+    elif p1.x_vel != 0:  # If player is in motion
+        p1.rotation = get_rotation(p1.x_vel / abs(p1.x_vel), 0)  # Update rotation
+    elif p1.y_vel != 0:  # If player is in motion
+        p1.rotation = get_rotation(0, p1.y_vel / abs(p1.y_vel))  # Update rotation
 
     xlegal = not player_collision(p1.x + p1.x_vel, p1.y, p1.width, p1.height)  # Check if x-axis movement is legal
     ylegal = not player_collision(p1.x, p1.y + p1.y_vel, p1.width, p1.height)  # Check if y-axis movement is legal
@@ -304,7 +318,7 @@ while running:  # Game should keep looping until game over
 
     flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
     if luigi.flash_mode == 'on':  # Check if flashlight is on
-        flash_polygon_points = flashlight(luigi, intensity=10)  # Get flashlight trapizoid verticies
+        flash_polygon_points = flashlight(luigi, intensity=7)  # Get flashlight trapizoid verticies
         flash_polygon = Polygon(flash_polygon_points)  # Create trapizoid out of verticies
         pygame.draw.polygon(screen, FLASH_COLOR, flash_polygon_points)  # Draw flashlight based on trapizoid
 
@@ -328,7 +342,7 @@ while running:  # Game should keep looping until game over
 
     if time() - ghost.timer > 2 and ghost.burning:  # If the ghost has been burning for longer than 2 seconds
         ghost.burning = False  # Stop burning
-        ghost.speed = 5  # Revert to normal speed
+        ghost.speed = 3  # Revert to normal speed
 
     if ghost.visible:
         ghost.show(screen)  # Show the ghost on screen if it's burning or dashing
@@ -347,4 +361,6 @@ To-DO:
 - make better flashlight
 - add human invincibility on respawn
 - add radar indicator for human distance from ghost
+- allow multiple games to run 1 after another
+- add start GUI
 '''

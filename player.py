@@ -19,7 +19,7 @@ class Player:
         self.box = box(self.x, self.y, self.x + self.width, self.y + self.height)
         self.x_vel = 0
         self.y_vel = 0
-        self.speed = 5
+        self.speed = 3
         self.rotation = 0
 
         self._actionkeys: Dict[str, any] = {
@@ -87,7 +87,7 @@ class Player:
 
 class Human(Player):
     def __init__(self, stx, sty):
-        super().__init__("images/man.png", stx, sty)  # Inherits from player class
+        super().__init__("images/human.png", stx, sty)  # Inherits from player class
         self.rotation = 0
         self.flash_mode = "off"
         self.lives = 3
@@ -132,12 +132,12 @@ class Ghost(Player):
         self.timer = time()
         self.burning = True
         self.visible = True
-        self.speed = 7
+        self.speed = 4
 
     def dash(self, d):
         if d:
             if not self.dashing:
-                self.speed = 8
+                self.speed = 5
                 self.dashing = True
                 self.visible = True
                 pygame.mixer.Sound.play(ghost_dash)
@@ -145,7 +145,7 @@ class Ghost(Player):
             self.dashing = False
             if not self.burning:
                 self.visible = False
-                self.speed = 5
+                self.speed = 3
 
     def execEvents(self):
         super().execEvents()
@@ -158,6 +158,6 @@ class Ghost(Player):
 
 
 human_spawnpoint = (0, 101)
-ghost_spawnpoint = (100, 200)
+ghost_spawnpoint = (380, 414)
 default_players = [Human(human_spawnpoint[0], human_spawnpoint[1]),
                    Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1])]
