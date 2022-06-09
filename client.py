@@ -240,7 +240,7 @@ def game_over(player1: Player, winner: Player) -> bool:
 
     pygame.display.update()  # Update the screen
 
-    for _ in range(60 * 15):
+    for _ in range(60 * 20):
 
         for event in pygame.event.get():  # Loop over pygame events
             if event.type == pygame.QUIT:  # Check for quit event (click on x button)
