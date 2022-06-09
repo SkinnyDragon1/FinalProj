@@ -2,7 +2,7 @@ import socket
 from _thread import *
 from time import sleep
 
-from player import Player, Human, Ghost, default_players
+from player import default_players
 import dill as pickle
 from game import Game
 
