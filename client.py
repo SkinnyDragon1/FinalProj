@@ -184,11 +184,11 @@ def draw_blocks() -> None:
         pygame.draw.rect(screen, block["color"], block["rect"])  # Draw block
 
 
-def create_map_from_file(filename: str) -> None:
+def create_map_from_file(filename: str, tp: int) -> None:
     with open(filename, 'r') as f:  # Open file in reading mode
         file_block_list = json.load(f)  # Load file info with json
         for item in file_block_list:  # Loop over all blocks
-            create_block(item[0], item[1], item[2], item[3], item[4])  # Create block from file info
+            create_block(item[0], item[1] + tp, item[2], item[3] + tp, item[4])  # Create block from file info
         f.close()  # Close the file
 
 
@@ -262,7 +262,7 @@ while not game.connected():
     waiting_room()
 
 # -----------------------------------------------------------------------
-create_map_from_file('map.json')  # Create map blocks based on file
+create_map_from_file('map.json', top_border)  # Create map blocks based on file
 
 pygame.mixer.music.stop()  # Stop previous music
 pygame.mixer.music.unload()  # Unload it from mixer
