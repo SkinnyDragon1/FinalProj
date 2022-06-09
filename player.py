@@ -1,5 +1,4 @@
 from math import sqrt
-import pygame.image
 import pygame
 from time import time
 from shapely.geometry import box
@@ -88,7 +87,6 @@ class Player:
 class Human(Player):
     def __init__(self, stx, sty):
         super().__init__("images/human.png", stx, sty)  # Inherits from player class
-        self.rotation = 0
         self.flash_mode = "off"
         self.lives = 3
 

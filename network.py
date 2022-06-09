@@ -1,9 +1,7 @@
 import socket
 import dill as pickle
 from typing import Union, Tuple
-
-from game import Game
-from player import Human, Ghost, Player
+from player import Player
 
 
 class Network:
