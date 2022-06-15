@@ -1,12 +1,13 @@
 import pygame
 import json
-from math import radians, cos, sin
+from math import radians, cos, sin, copysign
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
 from typing import Tuple, cast, List
 from network import Network
 from time import time
-from player import human_spawnpoint, Player, Human, Ghost
+from player import human_spawnpoint, Player, Human, Ghost, default_players
+from astar import create_grid_from_file, findpath, draw_grid, draw, draw_path
 
 # Initializing Pygame
 pygame.init()
@@ -37,19 +38,20 @@ HEALTH_BAR_COLOR = (219, 65, 50)  # Red
 HEART_IMG = pygame.image.load("images/heart.png")  # 40x40 pixels
 FIRE_IMG = pygame.image.load("images/fire.png")  # 64x64 pixels
 EYE_IMG = pygame.image.load("images/eye.png")  # 64x64 pixels
-# Load game sounds and music
-pygame.mixer.music.load("sounds/Opening.mp3")
+# Load game sounds
 caught_by_ghost = pygame.mixer.Sound("sounds/Caught By Ghost.mp3")
 ghost_wins = pygame.mixer.Sound("sounds/Ghost Wins.mp3")
 ghost_loses = pygame.mixer.Sound("sounds/Ghost Loses.mp3")
 ghost_8 = pygame.mixer.Sound("sounds/Ghost 8.mp3")  # length = 0.75s
-last_played = time() - 0.75  # Keep track of last time played so that sounds don't overlap
+# Determine framerate
+FRAMERATE = 60
 
 
 def waiting_room() -> None:
     screen.fill((0, 0, 0))  # Set screen to black
 
-    font = pygame.font.SysFont("comicsans", int(screen.get_width() / 12))  # Set font and size (relative to screen width)
+    font = pygame.font.SysFont("comicsans",
+                               int(screen.get_width() / 12))  # Set font and size (relative to screen width)
     text = font.render("Waiting for player...", True, (255, 255, 255))  # Create text
     screen.blit(text, (100, 300))  # Put text on screen
 
@@ -164,7 +166,7 @@ def create_block(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, int]
     width = x2 - x1
     height = y2 - y1
     rect = pygame.Rect(x1, y1, width, height)
-    block_box = box(x1, y1, x2, y2)
+    block_box = box(x1 + 1, y1 + 1, x2 - 1, y2 - 1)  # Create slightly smaller box to eliminate false collisions
 
     # Create block dict out of variables
     new_block = {"x1": x1,
@@ -192,16 +194,17 @@ def create_map_from_file(filename: str, tp: int) -> None:
         f.close()  # Close the file
 
 
-def get_rotation(dx: float, dy: float) -> int:
-    '''
-
-    :param dx: direction of x-velocity; either +1, -1, or 0 depending on the direction of the player in the x-axis
-    :param dy: direction of y-velocity; either +1, -1, or 0 depending on the direction of the player in the y-axis
+def get_rotation(xvel: int, yvel: int) -> int:
+    dx = copysign(1, xvel) if xvel != 0 else 0  # Turn xvel into speed direction instead of value
+    dy = copysign(1, yvel) if yvel != 0 else 0  # Turn yvel into speed direction instead of value
+    """
+    dx: direction of x-velocity; either +1, -1, or 0 depending on the direction of the player in the x-axis
+    dy: direction of y-velocity; either +1, -1, or 0 depending on the direction of the player in the y-axis
     :return: the angle in which the player is looking, in increments of 45
-    '''
-    # trigonomical funcs are computationally expensive therefore it's faster to use indexes of a small cached list
+    """
     dx = int(dx + 1)  # Increment dx to match list indexing
     dy = int(dy + 1)  # Increment dy to match list indexing
+    # trigonomical funcs are computationally expensive therefore it's faster to use indexes of a small cached list
     rotation_list = [[135, 180, 225],  # Create 2D list which contains possible rotation angles
                      [90, 0, 270],
                      [45, 0, 315]]
@@ -251,116 +254,220 @@ def game_over(player1: Player, winner: Player) -> bool:
     return False  # Return false (the game should stop running)
 
 
-# Setting up connection to server
-n = Network()  # Create network instance
-p1, game = n.getWaitingState()  # Get player 1 info from server
-# p2 = n.send(p1)  # Get player 2 info from server
+def MultiplayerGame():
+    # Setting up connection to server
+    n = Network()  # Create network instance
+    p1, game = n.getWaitingState()  # Get player 1 info from server
+    # p2 = n.send(p1)  # Get player 2 info from server
 
-pygame.mixer.music.play(-1)  # Play music on repeat
-while not game.connected():
-    p1, game = n.getWaitingState()
-    waiting_room()
+    pygame.mixer.music.load("sounds/Opening.mp3")  # Load music track
+    pygame.mixer.music.play(-1)  # Play music on repeat
+    while not game.connected():
+        p1, game = n.getWaitingState()
+        waiting_room()
 
-# -----------------------------------------------------------------------
-create_map_from_file('map.json', top_border)  # Create map blocks based on file
+    # -----------------------------------------------------------------------
+    create_map_from_file('map.json', top_border)  # Create map blocks based on file
 
-pygame.mixer.music.stop()  # Stop previous music
-pygame.mixer.music.unload()  # Unload it from mixer
-pygame.mixer.music.load("sounds/Background Music.mp3")  # Load new music
-pygame.mixer.music.play(-1)  # Play music on repeat
+    pygame.mixer.music.stop()  # Stop previous music
+    pygame.mixer.music.unload()  # Unload it from mixer
+    pygame.mixer.music.load("sounds/Background Music.mp3")  # Load new music
+    pygame.mixer.music.play(-1)  # Play music on repeat
 
-# Game loop
-running = True
-while running:  # Game should keep looping until game over
+    last_played = time() - 0.75  # Keep track of last time effect was played so that sounds don't overlap
 
-    screen.fill((0, 0, 0))  # Set screen to black
-    draw_blocks()  # Draw walls
+    # Game loop
+    running = True
+    while running:  # Game should keep looping until game over
 
-    for e in pygame.event.get():  # Loop over pygame events
-        if e.type == pygame.QUIT:  # Check for quit event (click on x button)
-            quit()
+        screen.fill((0, 0, 0))  # Set screen to black
+        draw_blocks()  # Draw walls
 
-    p1.execEvents()  # Check for player events (movement, flashlight, etc)
+        for e in pygame.event.get():  # Loop over pygame events
+            if e.type == pygame.QUIT:  # Check for quit event (click on x button)
+                quit()
 
-    if p1.x_vel != 0 and p1.y_vel != 0:  # If player is in motion
-        p1.rotation = get_rotation(p1.x_vel / abs(p1.x_vel), p1.y_vel / abs(p1.y_vel))  # Update rotation
-    elif p1.x_vel != 0:  # If player is in motion
-        p1.rotation = get_rotation(p1.x_vel / abs(p1.x_vel), 0)  # Update rotation
-    elif p1.y_vel != 0:  # If player is in motion
-        p1.rotation = get_rotation(0, p1.y_vel / abs(p1.y_vel))  # Update rotation
+        p1.execEvents()  # Check for player events (movement, flashlight, etc)
 
-    xlegal = not player_collision(p1.x + p1.x_vel, p1.y, p1.width, p1.height)  # Check if x-axis movement is legal
-    ylegal = not player_collision(p1.x, p1.y + p1.y_vel, p1.width, p1.height)  # Check if y-axis movement is legal
+        xlegal = not player_collision(p1.x + p1.x_vel, p1.y, p1.width, p1.height)  # Check if x-axis movement is legal
+        ylegal = not player_collision(p1.x, p1.y + p1.y_vel, p1.width, p1.height)  # Check if y-axis movement is legal
 
-    if p1.x_vel != 0 and p1.y_vel != 0 and xlegal and ylegal:  # If the player is moving diagonally
-        p1.addX(p1.x_vel / 1.414)  # Slow down speed in each axis taking into account the pythagorean theorem
-        p1.addY(p1.y_vel / 1.414)
+        if p1.x_vel != 0 and p1.y_vel != 0 and xlegal and ylegal:  # If the player is moving diagonally
+            p1.addX(p1.x_vel / 1.414)  # Slow down speed in each axis taking into account the pythagorean theorem
+            p1.addY(p1.y_vel / 1.414)
 
-    else:
-        if xlegal:
-            p1.addX(p1.x_vel)  # Move player in the x-axis
-        if ylegal:
-            p1.addY(p1.y_vel)  # Move player in the y-axis
+        else:
+            if xlegal:
+                p1.addX(p1.x_vel)  # Move player in the x-axis
+            if ylegal:
+                p1.addY(p1.y_vel)  # Move player in the y-axis
 
-    p2 = n.send(p1)  # Send player 1's info to server and update player 2 on screen based on server response
+        p2 = n.send(p1)  # Send player 1's info to server and update player 2 on screen based on server response
 
-    #  Check which player is the human and which one is the ghost
-    if p1.isHuman():
-        luigi: Human = cast(Human, p1)
-        ghost: Ghost = cast(Ghost, p2)
-    else:
-        luigi: Human = cast(Human, p2)
-        ghost: Ghost = cast(Ghost, p1)
+        #  Check which player is the human and which one is the ghost
+        if p1.isHuman():
+            human: Human = cast(Human, p1)
+            ghost: Ghost = cast(Ghost, p2)
+        else:
+            human: Human = cast(Human, p2)
+            ghost: Ghost = cast(Ghost, p1)
 
-    if p2.isHuman():
+        if human.x_vel != 0 or human.y_vel != 0:
+            human.rotation = get_rotation(human.x_vel, human.y_vel)
+
+        if p2.isHuman():
+            p2.show(screen)  # Show opponent only if it is the human
+        p1.show(screen)
+
+        flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
+        if human.flash_mode == 'on':  # Check if flashlight is on
+            flash_polygon_points = flashlight(human, intensity=7)  # Get flashlight trapizoid verticies
+            flash_polygon = Polygon(flash_polygon_points)  # Create trapizoid out of verticies
+            pygame.draw.polygon(screen, FLASH_COLOR, flash_polygon_points)  # Draw flashlight based on trapizoid
+
+        if ghost.box.intersects(flash_polygon):  # If the flashlight hit the ghost
+            ghost.health -= 0.5  # Lower ghost's health
+            ghost.burn()  # Update ghost object to be burning
+            print(f"Ow! My health is now {ghost.health}")
+            if time() - last_played > 0.8:  # Check if enough time has passed since last time sound effect was played
+                last_played = time()  # Update last time played
+                pygame.mixer.Sound.play(ghost_8)
+
+        if ghost.box.intersects(human.box) and not ghost.visible:  # If the ghost is invisible and is touching the human
+            human.lives -= 1  # Lower one of the human's lives
+            pygame.mixer.Sound.play(caught_by_ghost)  # Play sound effect
+            print(f"Oh-a-no, i have é only {human.lives} livés é left")
+            human.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
+
+        # If the ghost is burning and the distance between the human and the ghost is smaller than 120 pixels
+        if ghost.burning and ghost.distance(human) < 120:
+            ghost.timer = time()  # Reset the ghost timer (so that he stays visible on screen)
+
+        if time() - ghost.timer > 2 and ghost.burning:  # If the ghost has been burning for longer than 2 seconds
+            ghost.burning = False  # Stop burning
+            ghost.speed = 3  # Revert to normal speed
+
+        if ghost.visible:
+            ghost.show(screen)  # Show the ghost on screen if it's burning or dashing
+
+        health_bar(ghost.health)  # Display ghost health bar
+        draw_hearts(human.lives)  # Display human lives
+        p1.updateBox()  # Update player hitbox
+        show_icons(p1)  # Draw necessary icons (only if p1 is the ghost)
+        running = check_for_end(p1, human, ghost)  # Check if game has ended and if so stop the while loop
+        pygame.display.update()  # Update screen
+        pygame.time.Clock().tick(60)  # Tick the game a constant amount (60fps)
+
+
+def SingleplayerGame():
+    create_map_from_file('map.json', top_border)  # Create map blocks based on file
+    grid_1 = create_grid_from_file('map.json', 800, 15, 20)  # Create a grid for pathfinding based on file
+    grid_2 = create_grid_from_file('map.json', 800, 30, 40)  # Create a more detailed grid for specific cases
+    ticknum = 0  # Keep track of the number of ticks
+    pygame.mixer.music.load("sounds/Background Music.mp3")  # Load music track
+    pygame.mixer.music.play(-1)  # Play music on repeat
+
+    last_played = time() - 0.75  # Keep track of last time effect was played so that sounds don't overlap
+
+    p1: Human = default_players[0]
+    p2: Ghost = default_players[1]
+    path = findpath(grid_1, (p2.x, p2.y - top_border), (p1.x, p1.y - top_border))
+    # cg = grid_1
+    # Game loop
+    running = True
+    while running:  # Game should keep looping until game over
+
+        screen.fill((0, 0, 0))  # Set screen to black
+        draw_blocks()  # Draw walls
+
+        for e in pygame.event.get():  # Loop over pygame events
+            if e.type == pygame.QUIT:  # Check for quit event (click on x button)
+                quit()
+
+        p1.execEvents()  # Check for player events (movement, flashlight, etc)
+
+        # '''UPDATE PLAYER-2 HERE'''
+        p2.followPath(path, top_border)
+        if ticknum % (FRAMERATE / 12) == 0:
+            path = findpath(grid_1, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2), (p1.x, p1.y - top_border))
+            if len(path) == 0:
+                # cg = grid_2
+                path = findpath(grid_2, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2), (p1.x, p1.y - top_border))
+        # draw_path(screen, cg)
+        # cg = grid_1
+
+        if p1.x_vel != 0 or p1.y_vel != 0:
+            p1.rotation = get_rotation(p1.x_vel, p1.y_vel)
+
+        xlegal = not player_collision(p1.x + p1.x_vel, p1.y, p1.width, p1.height)  # Check if x-axis movement is legal
+        ylegal = not player_collision(p1.x, p1.y + p1.y_vel, p1.width, p1.height)  # Check if y-axis movement is legal
+
+        if p1.x_vel != 0 and p1.y_vel != 0 and xlegal and ylegal:  # If the player is moving diagonally
+            p1.addX(p1.x_vel / 1.414)  # Slow down speed in each axis taking into account the pythagorean theorem
+            p1.addY(p1.y_vel / 1.414)
+
+        else:
+            if xlegal:
+                p1.addX(p1.x_vel)  # Move player in the x-axis
+            if ylegal:
+                p1.addY(p1.y_vel)  # Move player in the y-axis
+
+        xlegal = not player_collision(p2.x + p2.x_vel, p2.y, p2.width, p2.height)  # Check if x-axis movement is legal
+        ylegal = not player_collision(p2.x, p2.y + p2.y_vel, p2.width, p2.height)  # Check if y-axis movement is legal
+
+        if p2.x_vel != 0 and p2.y_vel != 0 and xlegal and ylegal:  # If the player is moving diagonally
+            p2.addX(p2.x_vel / 1.414)  # Slow down speed in each axis taking into account the pythagorean theorem
+            p2.addY(p2.y_vel / 1.414)
+
+        else:
+            if xlegal:
+                p2.addX(p2.x_vel)  # Move player in the x-axis
+            if ylegal:
+                p2.addY(p2.y_vel)  # Move player in the y-axis
+
         p2.show(screen)  # Show opponent only if it is the human
-    p1.show(screen)
+        p1.show(screen)
 
-    flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
-    if luigi.flash_mode == 'on':  # Check if flashlight is on
-        flash_polygon_points = flashlight(luigi, intensity=7)  # Get flashlight trapizoid verticies
-        flash_polygon = Polygon(flash_polygon_points)  # Create trapizoid out of verticies
-        pygame.draw.polygon(screen, FLASH_COLOR, flash_polygon_points)  # Draw flashlight based on trapizoid
+        flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
+        if p1.flash_mode == 'on':  # Check if flashlight is on
+            flash_polygon_points = flashlight(p1, intensity=7)  # Get flashlight trapizoid verticies
+            flash_polygon = Polygon(flash_polygon_points)  # Create trapizoid out of verticies
+            pygame.draw.polygon(screen, FLASH_COLOR, flash_polygon_points)  # Draw flashlight based on trapizoid
 
-    if ghost.box.intersects(flash_polygon):  # If the flashlight hit the ghost
-        ghost.health -= 0.5  # Lower ghost's health
-        ghost.burn()  # Update ghost object to be burning
-        print(f"Ow! My health is now {ghost.health}")
-        if time() - last_played > 0.8:  # Check if enough time has passed since last time sound effect was played
-            last_played = time()  # Update last time played
-            pygame.mixer.Sound.play(ghost_8)
+        if p2.box.intersects(flash_polygon):  # If the flashlight hit the ghost
+            p2.health -= 0.5  # Lower ghost's health
+            p2.burn()  # Update ghost object to be burning
+            print(f"Ow! My health is now {p2.health}")
+            if time() - last_played > 0.8:  # Check if enough time has passed since last time sound effect was played
+                last_played = time()  # Update last time played
+                pygame.mixer.Sound.play(ghost_8)
 
-    if ghost.box.intersects(luigi.box) and not ghost.visible:  # If the ghost is invisible and is touching the human
-        luigi.lives -= 1  # Lower one of the human's lives
-        pygame.mixer.Sound.play(caught_by_ghost)  # Play sound effect
-        print(f"Oh-a-no, i have é only {luigi.lives} livés é left")
-        luigi.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
+        if p2.box.intersects(p1.box) and not p2.visible:  # If the ghost is invisible and is touching the human
+            p1.lives -= 1  # Lower one of the human's lives
+            pygame.mixer.Sound.play(caught_by_ghost)  # Play sound effect
+            print(f"Oh-a-no, i have é only {p1.lives} livés é left")
+            p1.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
 
-    # If the ghost is burning and the distance between the human and the ghost is smaller than 120 pixels
-    if ghost.burning and ghost.distance(luigi) < 120:
-        ghost.timer = time()  # Reset the ghost timer (so that he stays visible on screen)
+        # If the ghost is burning and the distance between the human and the ghost is smaller than 120 pixels
+        if p2.burning and p2.distance(p1) < 120:
+            p2.timer = time()  # Reset the ghost timer (so that he stays visible on screen)
 
-    if time() - ghost.timer > 2 and ghost.burning:  # If the ghost has been burning for longer than 2 seconds
-        ghost.burning = False  # Stop burning
-        ghost.speed = 3  # Revert to normal speed
+        if time() - p2.timer > 2 and p2.burning:  # If the ghost has been burning for longer than 2 seconds
+            p2.burning = False  # Stop burning
+            p2.speed = 3  # Revert to normal speed
 
-    if ghost.visible:
-        ghost.show(screen)  # Show the ghost on screen if it's burning or dashing
+        if p2.visible:
+            p2.show(screen)  # Show the ghost on screen if it's burning or dashing
 
-    health_bar(ghost.health)  # Display ghost health bar
-    draw_hearts(luigi.lives)  # Display human lives
-    p1.updateBox()  # Update player hitbox
-    show_icons(p1)  # Draw necessary icons (only if p1 is the ghost)
-    running = check_for_end(p1, luigi, ghost)  # Check if game has ended and if so stop the while loop
-    pygame.display.update()  # Update screen
-    pygame.time.Clock().tick(60)  # Tick the game a constant amount (60fps)
+        health_bar(p2.health)  # Display ghost health bar
+        draw_hearts(p1.lives)  # Display human lives
+        p1.updateBox()  # Update player hitbox
+        p2.updateBox()  # Update player hitbox
+        running = check_for_end(p1, p1, p2)  # Check if game has ended and if so stop the while loop
+        pygame.display.update()  # Update screen
 
-'''
-To-DO:
-- add A*
-- make better flashlight
-- add human invincibility on respawn
-- add radar indicator for human distance from ghost
-- allow multiple games to run 1 after another
-- add start GUI
-'''
+        pygame.time.Clock().tick(FRAMERATE)  # Tick the game a constant amount (60fps)
+        ticknum += 1  # Increment the tick count
+
+
+SingleplayerGame()
