@@ -17,15 +17,15 @@ block_y1 = 0
 block_x2 = 0
 block_y2 = 0
 
-blocks = []
+blocks = []  # Initialize empty block list
 BLOCK_COLOR = (89, 78, 77)
 
-# Clear json
+# # Initialize empty json list
 json_list = []
 
 
 def create_block(x1, y1, x2, y2, color):
-    # global blocks
+    # Make sure x2 and y2 are the greater values
     if x2 < x1:
         x1, x2 = x2, x1
     if y2 < y1:
@@ -53,6 +53,7 @@ def create_block(x1, y1, x2, y2, color):
 
 
 def draw_blocks():
+    # Draw all the blocks on screen
     for block in blocks:
         pygame.draw.rect(screen, block["color"], block["rect"])  # block[4] --> color; block[5] --> pygame.Rect()
 
@@ -63,25 +64,26 @@ with open("map.json", "r") as f, open("map_backup.json", "w") as t:
 
 # Loop
 running = True
+# Initiate while loop
 while running:
-    screen.fill((0, 0, 0))
+    screen.fill((0, 0, 0))  # Black
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-            create_block(0, -5, screen.get_width(), 0, BLOCK_COLOR)
+            create_block(0, -5, screen.get_width(), -1, BLOCK_COLOR)  # Create final block at top of screen
             with open('map.json', 'w') as f:
-                f.write(json.dumps(json_list))
+                f.write(json.dumps(json_list))  # Put the json data inside map.json
 
         # Keybind check
         if event.type == pygame.MOUSEBUTTONDOWN:
-            pos = pygame.mouse.get_pos()
+            pos = pygame.mouse.get_pos()  # Track mouse coordinates
             block_x1, block_y1 = pos
         if event.type == pygame.MOUSEBUTTONUP:
-            pos = pygame.mouse.get_pos()
+            pos = pygame.mouse.get_pos()  # Track mouse coordinates
             block_x2, block_y2 = pos
             create_block(block_x1, block_y1, block_x2, block_y2, color=BLOCK_COLOR)
 
-    draw_blocks()
-    pygame.display.update()
-    pygame.time.Clock().tick(60)
+    draw_blocks()  # Draw all blocks on screen
+    pygame.display.update()  # Update the screen
+    pygame.time.Clock().tick(60)  # Limit the game framerate to 60FPS
