@@ -7,7 +7,7 @@ from typing import Tuple, cast, List
 from network import Network
 from time import time
 from player import human_spawnpoint, Player, Human, Ghost, default_players
-from astar import create_grid_from_file, findpath, draw_grid, draw, draw_path
+from astar import create_grid_from_file, findpath
 
 # Initializing Pygame
 pygame.init()
@@ -258,7 +258,6 @@ def MultiplayerGame():
     # Setting up connection to server
     n = Network()  # Create network instance
     p1, game = n.getWaitingState()  # Get player 1 info from server
-    # p2 = n.send(p1)  # Get player 2 info from server
 
     pygame.mixer.music.load("sounds/Opening.mp3")  # Load music track
     pygame.mixer.music.play(-1)  # Play music on repeat
@@ -371,8 +370,7 @@ def SingleplayerGame():
 
     p1: Human = default_players[0]
     p2: Ghost = default_players[1]
-    path = findpath(grid_1, (p2.x, p2.y - top_border), (p1.x, p1.y - top_border))
-    # cg = grid_1
+    path = findpath(grid_1, (p2.x, p2.y - top_border), (p1.x, p1.y - top_border))  # Create first path
     # Game loop
     running = True
     while running:  # Game should keep looping until game over
@@ -386,15 +384,13 @@ def SingleplayerGame():
 
         p1.execEvents()  # Check for player events (movement, flashlight, etc)
 
-        # '''UPDATE PLAYER-2 HERE'''
-        p2.followPath(path, top_border)
+        '''UPDATE PLAYER-2 HERE'''
+        p2.followPath(path, top_border)  # Follow current path
         if ticknum % (FRAMERATE / 12) == 0:
+            # Update the path a constant amount per second (Not every tick so that game doesn't lag)
             path = findpath(grid_1, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2), (p1.x, p1.y - top_border))
-            if len(path) == 0:
-                # cg = grid_2
+            if len(path) == 0:  # If no path was found, try using the more detailed grid
                 path = findpath(grid_2, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2), (p1.x, p1.y - top_border))
-        # draw_path(screen, cg)
-        # cg = grid_1
 
         if p1.x_vel != 0 or p1.y_vel != 0:
             p1.rotation = get_rotation(p1.x_vel, p1.y_vel)
@@ -425,7 +421,8 @@ def SingleplayerGame():
             if ylegal:
                 p2.addY(p2.y_vel)  # Move player in the y-axis
 
-        p2.show(screen)  # Show opponent only if it is the human
+        # Don't show ghost to human
+        # p2.show(screen)
         p1.show(screen)
 
         flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
@@ -461,8 +458,8 @@ def SingleplayerGame():
 
         health_bar(p2.health)  # Display ghost health bar
         draw_hearts(p1.lives)  # Display human lives
-        p1.updateBox()  # Update player hitbox
-        p2.updateBox()  # Update player hitbox
+        p1.updateBox()  # Update player 1's hitbox
+        p2.updateBox()  # Update player 2's hitbox
         running = check_for_end(p1, p1, p2)  # Check if game has ended and if so stop the while loop
         pygame.display.update()  # Update screen
 
