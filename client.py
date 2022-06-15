@@ -8,9 +8,11 @@ from network import Network
 from time import time
 from player import human_spawnpoint, Player, Human, Ghost, default_players
 from astar import create_grid_from_file, findpath
+from button import Button
 
 # Initializing Pygame
 pygame.init()
+pygame.font.init()
 
 # Creating the borders
 play_size = (800, 600)
@@ -38,6 +40,8 @@ HEALTH_BAR_COLOR = (219, 65, 50)  # Red
 HEART_IMG = pygame.image.load("images/heart.png")  # 40x40 pixels
 FIRE_IMG = pygame.image.load("images/fire.png")  # 64x64 pixels
 EYE_IMG = pygame.image.load("images/eye.png")  # 64x64 pixels
+luigibg = pygame.image.load("images/luigibg.png")
+ghostbg = pygame.image.load("images/ghostbg1.png")
 # Load game sounds
 caught_by_ghost = pygame.mixer.Sound("sounds/Caught By Ghost.mp3")
 ghost_wins = pygame.mixer.Sound("sounds/Ghost Wins.mp3")
@@ -251,6 +255,11 @@ def game_over(player1: Player, winner: Player) -> bool:
 
         pygame.time.Clock().tick(60)
 
+    pygame.mixer.music.stop()  # Stop the music that is currently playing
+    pygame.mixer.stop()  # Stop all sound effects
+    screen.fill((0, 0, 0))  # Set screen to black
+    pygame.display.update()  # Update the screen
+
     return False  # Return false (the game should stop running)
 
 
@@ -390,7 +399,8 @@ def SingleplayerGame():
             # Update the path a constant amount per second (Not every tick so that game doesn't lag)
             path = findpath(grid_1, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2), (p1.x, p1.y - top_border))
             if len(path) == 0:  # If no path was found, try using the more detailed grid
-                path = findpath(grid_2, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2), (p1.x, p1.y - top_border))
+                path = findpath(grid_2, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2),
+                                (p1.x, p1.y - top_border))
 
         if p1.x_vel != 0 or p1.y_vel != 0:
             p1.rotation = get_rotation(p1.x_vel, p1.y_vel)
@@ -467,4 +477,44 @@ def SingleplayerGame():
         ticknum += 1  # Increment the tick count
 
 
-SingleplayerGame()
+def main():
+
+    btns = [Button("How to Play", 250, 300, 300, 150, (89, 78, 77), 50, lambda: None),
+            Button("Singleplayer", 250, 460, 145, 72.5, (89, 78, 77), 20, SingleplayerGame),
+            Button("Multiplayer", 405, 460, 145, 72.5, (89, 78, 77), 20, MultiplayerGame)]
+
+    run = True
+    clock = pygame.time.Clock()
+
+    while run:
+        clock.tick(60)
+
+        screen.blit(ghostbg, (5, 350))
+        screen.blit(luigibg, (620, 300))
+
+        font = pygame.font.SysFont("comicsans", 90)
+        text1 = font.render("Luigi's Ghost", True, (232, 201, 44))
+        text2 = font.render("Mansion", True, (232, 201, 44))
+        screen.blit(text1, (150, 50))
+        screen.blit(text2, (230, 150))
+
+        pos = pygame.mouse.get_pos()
+        for btn in btns:
+            btn.checkHover(pos)
+            btn.draw(screen)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()  # Track mouse coordinates
+                for btn in btns:
+                    btn.click(pos)
+
+        pygame.display.update()
+
+
+while True:
+    main()
