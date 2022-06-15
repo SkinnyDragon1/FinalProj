@@ -432,7 +432,7 @@ def SingleplayerGame():
                 p2.addY(p2.y_vel)  # Move player in the y-axis
 
         # Don't show ghost to human
-        # p2.show(screen)
+        p2.show(screen)
         p1.show(screen)
 
         flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
@@ -500,7 +500,7 @@ def main():
 
         pos = pygame.mouse.get_pos()
         for btn in btns:
-            btn.checkHover(pos)
+            btn.check_hover(pos)
             btn.draw(screen)
 
         for event in pygame.event.get():
