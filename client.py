@@ -6,7 +6,7 @@ from shapely.geometry.polygon import Polygon
 from typing import Tuple, cast, List
 from network import Network
 from time import time
-from player import human_spawnpoint, Player, Human, Ghost, default_players
+from player import human_spawnpoint, ghost_spawnpoint, Player, Human, Ghost
 from astar import create_grid_from_file, findpath
 from button import Button
 
@@ -247,7 +247,7 @@ def game_over(player1: Player, winner: Player) -> bool:
 
     pygame.display.update()  # Update the screen
 
-    for _ in range(60 * 20):
+    for _ in range(60 * 5):
 
         for event in pygame.event.get():  # Loop over pygame events
             if event.type == pygame.QUIT:  # Check for quit event (click on x button)
@@ -377,8 +377,8 @@ def SingleplayerGame():
 
     last_played = time() - 0.75  # Keep track of last time effect was played so that sounds don't overlap
 
-    p1: Human = default_players[0]
-    p2: Ghost = default_players[1]
+    p1: Human = Human(human_spawnpoint[0], human_spawnpoint[1])
+    p2: Ghost = Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1])
     path = findpath(grid_1, (p2.x, p2.y - top_border), (p1.x, p1.y - top_border))  # Create first path
     # Game loop
     running = True

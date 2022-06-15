@@ -1,9 +1,9 @@
 import socket
 from _thread import *
 from time import sleep
-from player import default_players
 import dill as pickle
 from game import Game
+from player import human_spawnpoint, ghost_spawnpoint, Human, Ghost
 
 server = socket.gethostbyname(socket.gethostname())  # "192.168.1.42"
 port = 5555
@@ -18,14 +18,16 @@ except socket.error as e:
 s.listen()  # Begin listening for connections
 print("Waiting for connection - Server Started")
 
-players = default_players  # Get the default player's data
 games = {}  # Keep track of games
 idCount = 0  # Keep track of game IDs
 
+
 def threaded_client(conn: socket.socket, player, game_id):
+    players = games[game_id].players
     while not games[game_id].connected():
         conn.send(pickle.dumps((players[player], games[game_id])))  # Keep pinging the first player until game is ready
         sleep(0.5)  # Sleep for half a second in order to not DOS player
+
     conn.send(pickle.dumps((players[player], games[game_id])))  # Send corrosponding player data to each player
 
     reply = ""
@@ -61,10 +63,12 @@ while True:
 
     idCount += 1  # Increment idCount
     current_player = 0  # Player 1
-    gameID = (idCount-1) // 2  # Calculate game id so that every 2 players connect to the same game id
+    gameID = (idCount - 1) // 2  # Calculate game id so that every 2 players connect to the same game id
 
     if idCount % 2 == 1:  # First player to connect
-        games[gameID] = Game(gameID)  # Create new game
+        games[gameID] = Game(gameID, default_players=[Human(human_spawnpoint[0], human_spawnpoint[1]),
+                                                      Ghost(ghost_spawnpoint[0],
+                                                            ghost_spawnpoint[1])])  # Create new game
         print(f'Creating a new game with id {gameID}')
     else:
         games[gameID].ready = True  # Connect to already created game and update it to start the game
