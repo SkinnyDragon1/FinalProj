@@ -1,6 +1,5 @@
 import socket
 import dill as pickle
-from typing import Union, Tuple
 from player import Player
 
 
@@ -15,16 +14,18 @@ class Network:
     def connect(self):
         try:
             self.client.connect(self.addr)
+            # Connect to server address
         except Exception as e:
             print("Error: " + str(e))
 
     def getWaitingState(self):
+        # Receive data from server
         return pickle.loads(self.client.recv(4096))
 
     def send(self, data) -> Player:
         try:
-            self.client.send(pickle.dumps(data))
-            return pickle.loads(self.client.recv(4096))
+            self.client.send(pickle.dumps(data))  # Send pickled data
+            return pickle.loads(self.client.recv(4096))  # Receive pickled data
 
         except socket.error as e:
             print("Error: " + str(e))
