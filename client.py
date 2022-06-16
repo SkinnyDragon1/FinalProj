@@ -382,6 +382,7 @@ def SingleplayerGame():
     p1: Human = Human(human_spawnpoint[0], human_spawnpoint[1])
     p2: Ghost = Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1])
     path = findpath(grid_1, (p2.x, p2.y - top_border), (p1.x, p1.y - top_border))  # Create first path
+    should_dash = False
     # Game loop
     running = True
     while running:  # Game should keep looping until game over
@@ -397,12 +398,19 @@ def SingleplayerGame():
 
         '''UPDATE PLAYER-2 HERE'''
         p2.followPath(path, top_border)  # Follow current path
+        # Update the path a constant amount of times per second (Not every tick so that game doesn't lag)
         if ticknum % (FRAMERATE / 12) == 0:
-            # Update the path a constant amount per second (Not every tick so that game doesn't lag)
             path = findpath(grid_1, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2), (p1.x, p1.y - top_border))
-            if len(path) == 0:  # If no path was found, try using the more detailed grid
+            should_dash = False  # Set default assumption (ghost shouldn't be dashing)
+            if len(path) >= 15:
+                should_dash = True  # If the ghost is far from the player, he should dash
+            elif len(path) == 0:  # If no path was found, try using the more detailed grid
                 path = findpath(grid_2, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2),
                                 (p1.x, p1.y - top_border))
+                if len(path) >= 30:
+                    should_dash = True  # If the ghost is far from the player, he should dash
+
+        p2.dash(should_dash)
 
         if p1.x_vel != 0 or p1.y_vel != 0:
             p1.rotation = get_rotation(p1.x_vel, p1.y_vel)
@@ -434,7 +442,7 @@ def SingleplayerGame():
                 p2.addY(p2.y_vel)  # Move player in the y-axis
 
         # Don't show ghost to human
-        p2.show(screen)
+        # p2.show(screen)
         p1.show(screen)
 
         flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
@@ -474,7 +482,6 @@ def SingleplayerGame():
         p2.updateBox()  # Update player 2's hitbox
         running = check_for_end(p1, p1, p2)  # Check if game has ended and if so stop the while loop
         pygame.display.update()  # Update screen
-
         pygame.time.Clock().tick(FRAMERATE)  # Tick the game a constant amount (60fps)
         ticknum += 1  # Increment the tick count
 
