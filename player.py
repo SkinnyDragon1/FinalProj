@@ -19,6 +19,7 @@ class Player:
         self.x_vel = 0
         self.y_vel = 0
         self.speed = 3
+        self.timer = time()
 
         self._actionkeys: Dict[str, any] = {
             # Dictionary which translates key values to lambda functions
@@ -111,7 +112,6 @@ class Ghost(Player):
     def __init__(self, stx, sty):
         super().__init__("images/ghost.png", stx, sty)  # Inherits from player class
         self.health = 100
-        self.timer = time()
         self.burning = False
         self.visible = False
         self.dashing = False

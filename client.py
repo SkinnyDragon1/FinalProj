@@ -344,10 +344,12 @@ def MultiplayerGame():
                 pygame.mixer.Sound.play(ghost_8)
 
         if ghost.box.intersects(human.box) and not ghost.visible:  # If the ghost is invisible and is touching the human
-            human.lives -= 1  # Lower one of the human's lives
-            pygame.mixer.Sound.play(caught_by_ghost)  # Play sound effect
-            print(f"Oh-a-no, i have é only {human.lives} livés é left")
-            human.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
+            if time() - human.timer > 3:  # Check for human invincibility
+                human.lives -= 1  # Lower one of the human's lives
+                pygame.mixer.Sound.play(caught_by_ghost)  # Play sound effect
+                print(f"Oh-a-no, i have é only {human.lives} livés é left")
+                human.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
+                human.timer = time()
 
         # If the ghost is burning and the distance between the human and the ghost is smaller than 120 pixels
         if ghost.burning and ghost.distance(human) < 120:
@@ -460,10 +462,12 @@ def SingleplayerGame():
                 pygame.mixer.Sound.play(ghost_8)
 
         if p2.box.intersects(p1.box) and not p2.visible:  # If the ghost is invisible and is touching the human
-            p1.lives -= 1  # Lower one of the human's lives
-            pygame.mixer.Sound.play(caught_by_ghost)  # Play sound effect
-            print(f"Oh-a-no, i have é only {p1.lives} livés é left")
-            p1.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
+            if time() - p1.timer > 3:  # Check for human invincibility
+                p1.lives -= 1  # Lower one of the human's lives
+                pygame.mixer.Sound.play(caught_by_ghost)  # Play sound effect
+                print(f"Oh-a-no, i have é only {p1.lives} livés é left")
+                p1.setCors(human_spawnpoint[0], human_spawnpoint[1])  # Return human to spawnpoint
+                p1.timer = time()
 
         # If the ghost is burning and the distance between the human and the ghost is smaller than 120 pixels
         if p2.burning and p2.distance(p1) < 120:
