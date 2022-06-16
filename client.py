@@ -257,6 +257,10 @@ def game_over(player1: Player, winner: Player) -> bool:
 
     pygame.mixer.music.stop()  # Stop the music that is currently playing
     pygame.mixer.stop()  # Stop all sound effects
+    pygame.mixer.music.unload()  # Unload music track
+    pygame.mixer.music.load("sounds/Opening.mp3")  # Load music track
+    pygame.mixer.music.play(-1)  # Play music on repeat
+
     screen.fill((0, 0, 0))  # Set screen to black
     pygame.display.update()  # Update the screen
 
@@ -268,8 +272,6 @@ def MultiplayerGame():
     n = Network()  # Create network instance
     p1, game = n.getWaitingState()  # Get player 1 info from server
 
-    pygame.mixer.music.load("sounds/Opening.mp3")  # Load music track
-    pygame.mixer.music.play(-1)  # Play music on repeat
     while not game.connected():
         p1, game = n.getWaitingState()
         waiting_room()
@@ -478,6 +480,8 @@ def SingleplayerGame():
 
 
 def main():
+    pygame.mixer.music.load("sounds/Opening.mp3")  # Load music track
+    pygame.mixer.music.play(-1)  # Play music on repeat
 
     btns = [Button("How to Play", 250, 300, 300, 150, (89, 78, 77), 50, lambda: None),
             Button("Singleplayer", 250, 460, 145, 72.5, (89, 78, 77), 20, SingleplayerGame),

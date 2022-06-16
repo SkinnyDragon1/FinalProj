@@ -165,9 +165,6 @@ class Ghost(Player):
         x_vel = copysign(self.speed, dx) if dx != 0 else 0
         y_vel = copysign(self.speed, dy) if dy != 0 else 0
 
-        print(f'XVEL: {x_vel}    YVEL: {y_vel}')
-        print(f"X: {self.x}      Y: {self.y}")
-
         self.setXvel(x_vel)
         self.setYvel(y_vel)
 
