@@ -131,10 +131,9 @@ def algorithm(grid: List, start: Spot, end: Spot):
 
 
 def create_block(x1: int, y1: int, x2: int, y2: int, block_boxes: List) -> None:
-    if x2 < x1:
-        x1, x2 = x2, x1  # Update variables so x2 is always bigger than x1
-    if y2 < y1:
-        y1, y2 = y2, y1  # Update variables so y2 is always bigger than y1
+    # Make sure x2 and y2 are the greater values
+    x1, x2 = sorted((x1, x2))
+    y1, y2 = sorted((y1, y2))
 
     # Initialize necessary variables
     block_box = box(x1 + 1, y1 + 1, x2 - 1, y2 - 1)  # Create slightly smaller box to eliminate false collisions
@@ -191,86 +190,8 @@ def coords_to_spot(grid, coordinates):
             if spot_box.intersects(p):
                 return spot
 
-
-def draw_grid(win, rows, columns, width):
-    gap = width // columns
-    for i in range(rows):
-        pygame.draw.line(win, (128, 128, 128), (0, i * gap), (width, i * gap))
-    for j in range(columns):
-        pygame.draw.line(win, (128, 128, 128), (j * gap, 0), (j * gap, width))
-
-
-def draw(win, grid, rows, columns, width):
-    win.fill((255, 255, 255))
-
-    draw_grid(win, rows, columns, width)
-    for row in grid:
-        for spot in row:
-            spot.draw(win)
-
-    pygame.display.update()
-    # for row in grid:
-        # print(", ".join([str((spot.x, spot.y, spot.is_barrier())) for spot in row]))
-
-    draw_path(win, grid)
-    pygame.display.update()
-
-def draw_path(win, grid):
-
-    for row in grid:
-        for spot in row:
-            if spot.state == 'path':
-                spot.draw(win)
-
-    pygame.display.update()
-
-
-# def main(win, width, height):
-#     ROWS, COLUMNS = 60, 80
-#     grid = create_grid_from_file('map.json', width, ROWS, COLUMNS)
-#     # for row in grid:
-#     #     print(", ".join([str((spot.x, spot.y)) for spot in row]))
-#
-#     start = coords_to_spot(grid, (210, 410))
-#     end = coords_to_spot(grid, (600, 200))
-#     start.make_path()
-#     end.make_path()
-#
-#     draw(win, grid, width, ROWS, height, COLUMNS)
-#
-#     run = True
-#     while run:
-#         for event in pygame.event.get():
-#             if event.type == pygame.QUIT:
-#                 run = False
-#
-#             if event.type == pygame.KEYDOWN:
-#                 if event.key == pygame.K_SPACE and start and end:
-#                     for row in grid:
-#                         for spot in row:
-#                             spot.update_neighbors(grid)
-#
-#                     b = algorithm(grid, start, end)
-#                     if not b:
-#                         print("No path")
-#
-#     pygame.quit()
-#
-#
-# main(WIN, WIDTH, HEIGHT)
-
-
 def findpath(grid, p1: Tuple[int, int], p2: Tuple[int, int]):
     start = coords_to_spot(grid, p1)
     end = coords_to_spot(grid, p2)
     b = algorithm(grid, start, end)
-    # draw(WIN, grid, len(grid), 80, 800)
     return b
-
-# grid = create_grid_from_file('map.json', 800, 60, 80)
-# print(findpath(grid, (380, 414 - 100), (10, 10)))
-
-# while True:
-#     for e in pygame.event.get():  # Loop over pygame events
-#         if e.type == pygame.QUIT:  # Check for quit event (click on x button)
-#             quit()
