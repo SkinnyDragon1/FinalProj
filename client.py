@@ -4,11 +4,14 @@ from math import radians, cos, sin, copysign
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
 from typing import Tuple, cast, List
+
+from block import Block
 from network import Network
 from time import time
 from player import human_spawnpoint, ghost_spawnpoint, Player, Human, Ghost
 from astar import create_grid_from_file, findpath
 from button import Button
+from random import choice
 
 # Initializing Pygame
 pygame.init()
@@ -104,7 +107,7 @@ def player_collision(x: int, y: int, width: float, height: float) -> bool:
         return True
 
     # Block collision
-    block_boxes = [block["block_box"] for block in blocks]  # Create a shapely box for each box in-game
+    block_boxes = [block.block_box for block in blocks]  # Create a shapely box for each box in-game
     player_box = box(x, y, x + width, y + height)
 
     for block_box in block_boxes:  # Check for each block
@@ -133,7 +136,7 @@ def flashlight(p, intensity: int) -> List[Tuple[float, float]]:
     intensity *= 10  # Translate intensity level into pixels
 
     # Create a shapely box for each box in-game
-    block_boxes = [block["block_box"] for block in blocks]
+    block_boxes = [block.block_box for block in blocks]
 
     def get_flash_polygon(i):  # create multi-use function for recursion purposes
         brx, bry = x + width, y + height  # Bottom right x and y cooridnates
@@ -161,33 +164,15 @@ def flashlight(p, intensity: int) -> List[Tuple[float, float]]:
 
 def create_block(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, int]) -> None:
     global blocks  # Make block list global so that the function will update it and not a local instance
-    if x2 < x1:
-        x1, x2 = x2, x1  # Update variables so x2 is always bigger than x1
-    if y2 < y1:
-        y1, y2 = y2, y1  # Update variables so y2 is always bigger than y1
 
-    # Initialize necessary variables
-    width = x2 - x1
-    height = y2 - y1
-    rect = pygame.Rect(x1, y1, width, height)
-    block_box = box(x1 + 1, y1 + 1, x2 - 1, y2 - 1)  # Create slightly smaller box to eliminate false collisions
-
-    # Create block dict out of variables
-    new_block = {"x1": x1,
-                 "y1": y1,
-                 "x2": x2,
-                 "y2": y2,
-                 "color": color,
-                 "rect": rect,
-                 "block_box": block_box
-                 }
+    new_block = Block(x1, y1, x2, y2, color)
 
     blocks.append(new_block)  # Append new block to total block list
 
 
 def draw_blocks() -> None:
     for block in blocks:  # Loop over all the blocks
-        pygame.draw.rect(screen, block["color"], block["rect"])  # Draw block
+        block.draw(screen)  # Draw block
 
 
 def create_map_from_file(filename: str, tp: int) -> None:
@@ -385,6 +370,7 @@ def SingleplayerGame():
     p2: Ghost = Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1])
     path = findpath(grid_1, (p2.x, p2.y - top_border), (p1.x, p1.y - top_border))  # Create first path
     should_dash = False
+    lr, tb = choice([right_border, left_border]), choice([bottom_border, top_border]) - top_border
     # Game loop
     running = True
     while running:  # Game should keep looping until game over
@@ -399,19 +385,29 @@ def SingleplayerGame():
         p1.execEvents()  # Check for player events (movement, flashlight, etc)
 
         '''UPDATE PLAYER-2 HERE'''
-        p2.followPath(path, top_border)  # Follow current path
         # Update the path a constant amount of times per second (Not every tick so that game doesn't lag)
-        if ticknum % (FRAMERATE / 12) == 0:
-            path = findpath(grid_1, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2), (p1.x, p1.y - top_border))
-            should_dash = False  # Set default assumption (ghost shouldn't be dashing)
-            if len(path) >= 15:
-                should_dash = True  # If the ghost is far from the player, he should dash
-            elif len(path) == 0:  # If no path was found, try using the more detailed grid
-                path = findpath(grid_2, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2),
-                                (p1.x, p1.y - top_border))
-                if len(path) >= 30:
+        if ticknum % (FRAMERATE / 12) == 0:  # 5 times a second
+            ghost_cors = (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2)
+            if p2.burning:
+                if ticknum % (FRAMERATE / 0.2) == 0:  # Once every 5 seconds
+                    lr, tb = choice([right_border, left_border]), choice([bottom_border, top_border]) - top_border
+                path = findpath(grid_1, ghost_cors, (lr, tb))
+
+            else:
+                path = findpath(grid_1, ghost_cors, (p1.x, p1.y - top_border))
+                should_dash = False  # Set default assumption (ghost shouldn't be dashing)
+
+                if len(path) >= 15:
                     should_dash = True  # If the ghost is far from the player, he should dash
 
+                elif len(path) == 0:  # If no path was found, try using the more detailed grid
+                    path = findpath(grid_2, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2),
+                                    (p1.x, p1.y - top_border))
+
+                    if len(path) >= 30:
+                        should_dash = True  # If the ghost is far from the player, he should dash
+
+        p2.followPath(path, top_border)  # Follow current path
         p2.dash(should_dash)
 
         if p1.x_vel != 0 or p1.y_vel != 0:
