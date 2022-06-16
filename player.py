@@ -155,8 +155,6 @@ class Ghost(Player):
             self.setYvel(0)
             return  # Stop the function
 
-        print(path[0])
-
         spot1_x = path[0][0]
         spot1_y = path[0][1] + top_border
         dx = spot1_x - self.x  # Difference in distance
@@ -167,7 +165,6 @@ class Ghost(Player):
 
         self.setXvel(x_vel)
         self.setYvel(y_vel)
-
 
 human_spawnpoint = (0, 101)
 ghost_spawnpoint = (380, 414)
