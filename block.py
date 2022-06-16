@@ -1,5 +1,5 @@
 import pygame
-from shapely.geometry import box, Point
+from shapely.geometry import box
 
 
 class Block:
@@ -21,5 +21,3 @@ class Block:
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.rect)
-
-
