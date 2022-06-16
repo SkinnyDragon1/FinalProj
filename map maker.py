@@ -1,5 +1,7 @@
 import pygame
 import json
+from block import Block
+
 # Initializing Pygame
 pygame.init()
 
@@ -25,23 +27,8 @@ json_list = []
 
 
 def create_block(x1, y1, x2, y2, color):
-    # Make sure x2 and y2 are the greater values
-    if x2 < x1:
-        x1, x2 = x2, x1
-    if y2 < y1:
-        y1, y2 = y2, y1
 
-    width = x2 - x1
-    height = y2 - y1
-    rect = pygame.Rect(x1, y1, width, height)
-
-    new_block = {"x1": x1,
-                 "y1": y1,
-                 "x2": x2,
-                 "y2": y2,
-                 "color": color,
-                 "rect": rect
-                 }
+    new_block = Block(x1, y1, x2, y2, color)
 
     blocks.append(new_block)
 
@@ -55,7 +42,7 @@ def create_block(x1, y1, x2, y2, color):
 def draw_blocks():
     # Draw all the blocks on screen
     for block in blocks:
-        pygame.draw.rect(screen, block["color"], block["rect"])  # block[4] --> color; block[5] --> pygame.Rect()
+        block.draw(screen)  # Draw block
 
 
 # Update backup
