@@ -17,12 +17,6 @@ class Spot:
         self.total_rows = total_rows
         self.total_columns = total_columns
 
-    def draw(self, win):
-        if self.is_barrier():
-            pygame.draw.rect(win, (0, 0, 0), pygame.Rect(self.x, self.y + 100, self.width, self.height))
-        if self.state == 'path':
-            pygame.draw.rect(win, (128, 0, 128), pygame.Rect(self.x, self.y + 100, self.width, self.height))
-
     def get_pos(self):
         return self.row, self.col
 
@@ -193,5 +187,4 @@ def coords_to_spot(grid, coordinates):
 def findpath(grid, p1: Tuple[int, int], p2: Tuple[int, int]):
     start = coords_to_spot(grid, p1)
     end = coords_to_spot(grid, p2)
-    b = algorithm(grid, start, end)
-    return b
+    return algorithm(grid, start, end)
