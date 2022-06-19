@@ -243,8 +243,6 @@ def game_over(player1: Player, winner: Player) -> bool:
     pygame.mixer.music.stop()  # Stop the music that is currently playing
     pygame.mixer.stop()  # Stop all sound effects
     pygame.mixer.music.unload()  # Unload music track
-    pygame.mixer.music.load("sounds/Opening.mp3")  # Load music track
-    pygame.mixer.music.play(-1)  # Play music on repeat
 
     screen.fill((0, 0, 0))  # Set screen to black
     pygame.display.update()  # Update the screen
@@ -265,7 +263,7 @@ def MultiplayerGame():
     create_map_from_file('map.json', top_border)  # Create map blocks based on file
 
     pygame.mixer.music.stop()  # Stop previous music
-    pygame.mixer.music.unload()  # Unload it from mixer
+    pygame.mixer.music.unload()  # Unload previous track
     pygame.mixer.music.load("sounds/Background Music.mp3")  # Load new music
     pygame.mixer.music.play(-1)  # Play music on repeat
 
@@ -361,6 +359,8 @@ def SingleplayerGame():
     grid_1 = create_grid_from_file('map.json', 800, 15, 20)  # Create a grid for pathfinding based on file
     grid_2 = create_grid_from_file('map.json', 800, 30, 40)  # Create a more detailed grid for specific cases
     ticknum = 0  # Keep track of the number of ticks
+    pygame.mixer.music.stop()  # Stop previous music
+    pygame.mixer.music.unload()  # Unload previous track
     pygame.mixer.music.load("sounds/Background Music.mp3")  # Load music track
     pygame.mixer.music.play(-1)  # Play music on repeat
 
@@ -486,13 +486,67 @@ def SingleplayerGame():
         ticknum += 1  # Increment the tick count
 
 
+def how_to_play_screen():
+    back_button = Button("Back", 10, 10, 80, 40, (181, 44, 34), (201, 59, 48), 30, main)
+
+    run = True
+    clock = pygame.time.Clock()
+
+    while run:
+        clock.tick(60)
+        screen.fill((0, 0, 0))  # Set screen to black
+
+        font_1 = pygame.font.SysFont("comicsans", 90)
+        htp_text = font_1.render("How To Play:", True, (232, 201, 44))
+
+        font_2 = pygame.font.SysFont("comicsans", 60)
+        human_text = font_2.render("Human", True, (25, 135, 8))
+        ghost_text = font_2.render("Ghost", True, (233, 240, 197))
+
+        font_3 = pygame.font.SysFont("comicsans", 30)
+        human_explain_text = "Your job is to find$and burn the ghost$using your flashlight.$$WASD to move.$$Space to flash light."
+        human_explain_text = human_explain_text.split("$")
+        for num, line in enumerate(human_explain_text):
+            explain_txt = font_3.render(line, True, (25, 135, 8))
+            text_rect = explain_txt.get_rect(center=(163, 390 + 32 * num))
+            screen.blit(explain_txt, text_rect)
+
+        ghost_explain_text = "Your job is to$capture the human$without beeing seen.$$WASD to move.$$Space to dash."
+        ghost_explain_text = ghost_explain_text.split("$")
+        for num, line in enumerate(ghost_explain_text):
+            explain_txt = font_3.render(line, True, (233, 240, 197))
+            text_rect = explain_txt.get_rect(center=(632, 390 + 32 * num))
+            screen.blit(explain_txt, text_rect)
+
+        pos = pygame.mouse.get_pos()
+        back_button.draw(screen, pos)
+
+        screen.blit(htp_text, (150, 80))
+        screen.blit(human_text, (70, 250))
+        screen.blit(ghost_text, (550, 250))
+        # screen.blit(human_explain_text, (20, 200))
+        # screen.blit(ghost_explain_text, (350, 200))
+
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()  # Track mouse coordinates
+                back_button.click(pos)
+
+
 def main():
+    screen.fill((0, 0, 0))  # Set screen to black
     pygame.mixer.music.load("sounds/Opening.mp3")  # Load music track
     pygame.mixer.music.play(-1)  # Play music on repeat
 
-    btns = [Button("How to Play", 250, 300, 300, 150, (89, 78, 77), 50, lambda: None),
-            Button("Singleplayer", 250, 460, 145, 72.5, (89, 78, 77), 20, SingleplayerGame),
-            Button("Multiplayer", 405, 460, 145, 72.5, (89, 78, 77), 20, MultiplayerGame)]
+    btns = [Button("How to Play", 250, 300, 300, 150, (89, 78, 77), (133, 117, 115), 50, how_to_play_screen),
+            Button("Singleplayer", 250, 460, 145, 72.5, (89, 78, 77), (133, 117, 115), 20, SingleplayerGame),
+            Button("Multiplayer", 405, 460, 145, 72.5, (89, 78, 77), (133, 117, 115), 20, MultiplayerGame)]
 
     run = True
     clock = pygame.time.Clock()
@@ -511,8 +565,7 @@ def main():
 
         pos = pygame.mouse.get_pos()
         for btn in btns:
-            btn.check_hover(pos)
-            btn.draw(screen)
+            btn.draw(screen, pos)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
