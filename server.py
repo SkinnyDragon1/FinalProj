@@ -22,18 +22,41 @@ games = {}  # Keep track of games
 idCount = 0  # Keep track of game IDs
 
 
-def threaded_client(conn: socket.socket, player, game_id):
+def threaded_client(conn: socket.socket, player, game_id) -> None:
+    connected = True
     players = games[game_id].players
     while not games[game_id].connected():
-        conn.send(pickle.dumps((players[player], games[game_id])))  # Keep pinging the first player until game is ready
-        sleep(0.5)  # Sleep for half a second in order to not DOS player
+        try:
+            conn.send(pickle.dumps((players[player], games[game_id])))  # Keep pinging the first player until game is ready
+            sleep(0.5)  # Sleep for half a second in order to not DOS player
+        except ConnectionAbortedError:
+            conn.close()  # Close connection
+            print(f"Player {player} in game {game_id} has disconnected")
+            games[game_id].crashed = True  # Update game as crashed
+            return  # Stop the threaded client
 
-    conn.send(pickle.dumps((players[player], games[game_id])))  # Send corrosponding player data to each player
+    try:
+        conn.send(pickle.dumps((players[player], games[game_id])))  # Send corrosponding player data to each player
+    except ConnectionAbortedError:
+        conn.close()  # Close connection
+        print(f"Player {player} in game {game_id} has disconnected")
+        games[game_id].crashed = True  # Update game as crashed
+        return  # Stop the threaded client
 
     reply = ""
     while True:
+
+        if games[game_id].crashed:
+            print(f"Player {1- player} in game {game_id} has disconnected and therefore game has crashed")
+            return
+
         try:
             data = pickle.loads(conn.recv(4096))  # Receive data
+
+            if not (data.isHuman() or data.isGhost()):
+                print(data)
+                sleep(100)
+
             players[player] = data  # Update database
 
             if not data:
@@ -50,8 +73,11 @@ def threaded_client(conn: socket.socket, player, game_id):
 
             conn.sendall(pickle.dumps(reply))  # Send opposing players data
 
-        except Exception as ex:
-            print(ex)
+        except EOFError:
+            conn.close()  # Close connection
+            print(f"Player {player} in game {game_id} has disconnected")
+            games[game_id].crashed = True  # Update game as crashed
+            return  # Stop the threaded client
 
     print("Lost Connection")
     conn.close()  # Close connection

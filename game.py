@@ -3,6 +3,7 @@ class Game:
         self.ready = False
         self.id = game_id
         self.players = default_players
+        self.crashed = False
 
     def connected(self):
         # Check if both players have connected
