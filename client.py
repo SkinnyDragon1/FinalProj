@@ -1,17 +1,18 @@
-import pygame
 import json
 from math import radians, cos, sin, copysign
-from shapely.geometry import Point, box
-from shapely.geometry.polygon import Polygon
+from random import choice
+from time import time
 from typing import Tuple, cast, List
 
-from block import Block
-from network import Network
-from time import time
-from player import human_spawnpoint, ghost_spawnpoint, Player, Human, Ghost
+import pygame
+from shapely.geometry import Point, box
+from shapely.geometry.polygon import Polygon
+
 from astar import create_grid_from_file, findpath
+from block import Block
 from button import Button
-from random import choice
+from network import Network
+from player import human_spawnpoint, ghost_spawnpoint, Player, Human, Ghost
 
 # Initializing Pygame
 pygame.init()
@@ -265,7 +266,7 @@ def game_over(player1: Player, winner: Player) -> bool:
     return False  # Return false (the game should stop running)
 
 
-def MultiplayerGame():
+def MultiplayerGame() -> bool:
     # Setting up connection to server
     n = Network()  # Create network instance
     p1, game = n.load_server_data()  # Get player 1 info from server
@@ -299,7 +300,19 @@ def MultiplayerGame():
 
         move_player(p1)
 
-        p2 = n.send(p1)  # Send player 1's info to server and update player 2 on screen based on server response
+        p2, game = n.send(p1)  # Send player 1's info to server and update player 2 on screen based on server response
+        if game.crashed:
+            print("Opponent has disconnected and game has crashed")
+
+            pygame.mixer.music.stop()  # Stop the music that is currently playing
+            pygame.mixer.stop()  # Stop all sound effects
+            pygame.mixer.music.unload()  # Unload music track
+            pygame.mixer.music.load("sounds/Background Music.mp3")  # Load music track
+            pygame.mixer.music.play(-1)  # Play music on repeat
+
+            screen.fill((0, 0, 0))  # Set screen to black
+
+            return False
 
         #  Check which player is the human and which one is the ghost
         if p1.isHuman():
@@ -356,6 +369,8 @@ def MultiplayerGame():
         running = check_for_end(p1, human, ghost)  # Check if game has ended and if so stop the while loop
         pygame.display.update()  # Update screen
         pygame.time.Clock().tick(60)  # Tick the game a constant amount (60fps)
+
+    return True
 
 
 def SingleplayerGame():

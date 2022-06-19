@@ -1,11 +1,13 @@
 import socket
 import struct
 from _thread import *
+from struct import pack, unpack
 from time import sleep
+
 import dill as pickle
+
 from game import Game
 from player import human_spawnpoint, ghost_spawnpoint, Human, Ghost
-from struct import pack, unpack
 
 server = socket.gethostbyname(socket.gethostname())  # "192.168.1.42"
 port = 5555
@@ -46,6 +48,7 @@ def threaded_client(conn: socket.socket, player, game_id) -> None:
     while not games[game_id].connected():
         try:
             packet = pickle.dumps((players[player], games[game_id]))  # Set up packet for sending
+            print(f'packet: {packet}      being sent to player {player}')
             conn.send(prefixed_packet(packet))  # Keep pinging the first player until game is ready
             sleep(0.5)  # Sleep for half a second in order to not DOS player
         except ConnectionAbortedError:
@@ -56,6 +59,7 @@ def threaded_client(conn: socket.socket, player, game_id) -> None:
 
     try:
         packet = pickle.dumps((players[player], games[game_id]))
+        print(f'packet: {packet}      being sent to player {player}')
         conn.send(prefixed_packet(packet))  # Send corrosponding player data to each player
     except ConnectionAbortedError:
         conn.close()  # Close connection
@@ -68,40 +72,28 @@ def threaded_client(conn: socket.socket, player, game_id) -> None:
 
         if games[game_id].crashed:
             print(f"Player {1 - player} in game {game_id} has disconnected and therefore game has crashed")
-            return
+            return  # Stop the threaded client
 
         try:
             data = load_prefixed_data(conn)  # Receive data
 
-            if not (data.isHuman() or data.isGhost()):
-                print(data)
-                sleep(100)
+            print(data)
 
             players[player] = data  # Update database
 
-            if not data:
-                print("Disconnected")
-                break
-            else:
-                if player == 1:
-                    reply = players[0]
-                else:
-                    reply = players[1]
+            reply = players[1 - player]  # Load response
 
-                print("Recieved: ", data)
-                print("Sending: ", reply)
+            print("Recieved: ", data)
+            print("Sending: ", reply)
 
-            packet = pickle.dumps(reply)
+            packet = pickle.dumps((reply, games[game_id]))  # Set up packet for sending
             conn.sendall(prefixed_packet(packet))  # Send opposing players data
 
-        except EOFError:
+        except (EOFError, struct.error):
             conn.close()  # Close connection
             print(f"Player {player} in game {game_id} has disconnected")
             games[game_id].crashed = True  # Update game as crashed
             return  # Stop the threaded client
-
-    print("Lost Connection")
-    conn.close()  # Close connection
 
 
 while True:
