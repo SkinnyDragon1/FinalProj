@@ -388,7 +388,7 @@ def SingleplayerGame():
     p1: Human = Human(human_spawnpoint[0], human_spawnpoint[1])
     p2: Ghost = Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1])
     path = findpath(grid_1, (p2.x, p2.y - top_border), (p1.x, p1.y - top_border))  # Create first path
-    should_dash = False
+    should_dash = False  # Boolean for if the ghost should be dashing
     lr, tb = choice([right_border, left_border]), choice([bottom_border, top_border]) - top_border
     # Game loop
     running = True
@@ -400,6 +400,12 @@ def SingleplayerGame():
         for e in pygame.event.get():  # Loop over pygame events
             if e.type == pygame.QUIT:  # Check for quit event (click on x button)
                 quit()
+
+        ''' Allow shift key press to reveal ghost for debugging purposes'''
+        if pygame.key.get_mods() & pygame.KMOD_SHIFT:
+            ghost_display = True  # Boolean for if ghost should be displayed (debugging purposes)
+        else:
+            ghost_display = False  # Boolean for if ghost should be displayed (debugging purposes)
 
         p1.execEvents()  # Check for player events (movement, flashlight, etc)
 
@@ -436,7 +442,8 @@ def SingleplayerGame():
         move_player(p2)  # Move player based on velocity
 
         # Don't show ghost to human
-        # p2.show(screen)
+        if ghost_display:
+            p2.show(screen)
         p1.show(screen)
 
         flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
