@@ -3,7 +3,8 @@ from typing import Tuple
 import pygame
 import json
 from block import Block
-from player import default_players
+from player import default_players, human_spawnpoint, ghost_spawnpoint
+from astar import create_grid_from_file, findpath
 
 # Initializing Pygame
 pygame.init()
@@ -29,12 +30,11 @@ FAINT_BLOCK_COLOR = (133, 122, 121)
 WARNING_BLOCK_COLOR = (171, 24, 10)
 RED_BLOCK_COLOR = (150, 20, 8)
 
-# # Initialize empty json list
+# Initialize empty json list
 json_list = []
 
 
 def create_block(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, int], warning_color: Tuple[int, int, int]):
-
     new_block = Block(x1, y1, x2, y2, color)
 
     for p in default_players:  # Loop over players
@@ -42,6 +42,7 @@ def create_block(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, int]
             new_block.color = warning_color  # Set new color
 
     blocks.append(new_block)
+
 
 def blocks_to_json() -> None:
     create_block(0, -5, screen.get_width(), -1, BLOCK_COLOR, WARNING_BLOCK_COLOR)  # Create final block at top of screen
@@ -66,7 +67,7 @@ def draw_faint_block(x1: int, y1: int, x2: int, y2: int, color: Tuple[int, int, 
     tmp_block = Block(x1, y1, x2, y2, color)
 
     for p in default_players:  # Loop over players
-        if p.box.intersects(tmp_block.block_box): # If block is touching player's box
+        if p.box.intersects(tmp_block.block_box):  # If block is touching player's box
             tmp_block.color = WARNING_BLOCK_COLOR  # Change block color
 
     pygame.draw.rect(screen, tmp_block.color, tmp_block.rect, 3)  # Draw a rectangle with a 3 pixel border
@@ -129,7 +130,7 @@ while running:
                 block_x1, block_y1 = pos  # Track mouse position
                 clicked = True
 
-            elif event.button == 3: # Right click
+            elif event.button == 3:  # Right click
                 del_blocks(pos)  # Delete blocks there
         if event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # Left click
@@ -140,3 +141,21 @@ while running:
     draw_blocks()  # Draw all blocks on screen
     pygame.display.update()  # Update the screen
     pygame.time.Clock().tick(60)  # Limit the game framerate to 60FPS
+
+
+grid = create_grid_from_file("map.json", 800, 15, 20)
+path = findpath(grid, ghost_spawnpoint, human_spawnpoint)
+valid = True
+
+if len(path) == 0:
+    print("Map Invalid - Map Returns No Path")
+    valid = False
+
+for block in blocks:  # Loop over all blocks
+    for p in default_players:  # Loop over players
+        if p.box.intersects(block.block_box):  # If block is touching player's box
+            print("Map Invalid - Player's spawnpoint is inside a block")
+            valid = False
+
+if valid:
+    print("Map Valid")
