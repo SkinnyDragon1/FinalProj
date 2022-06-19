@@ -1,6 +1,7 @@
 import socket
 import dill as pickle
 from player import Player
+from struct import pack, unpack
 
 
 class Network:
@@ -18,16 +19,30 @@ class Network:
         except Exception as e:
             print("Error: " + str(e))
 
-    def getWaitingState(self):
+    def load_server_data(self):
         # Receive data from server
-        return pickle.loads(self.client.recv(4096))
+        prefix = self.client.recv(4, socket.MSG_WAITALL)
+
+        length = unpack('!I', prefix)[0]  # Get length of incoming packet
+
+        recieved = self.client.recv(length)  # Recieve more bytes
+        print(len(recieved), recieved)
+
+        return pickle.loads(recieved)
 
     def send(self, data) -> Player:
         try:
-            self.client.send(pickle.dumps(data))  # Send pickled data
-            return pickle.loads(self.client.recv(4096))  # Receive pickled data
+            packet = pickle.dumps(data)
+            self.client.send(self.prefixed_packet(packet))  # Send pickled data
+            return self.load_server_data()
 
         except socket.error as e:
             print("Error: " + str(e))
+
+    @staticmethod
+    def prefixed_packet(packet):
+        length = pack('!I', len(packet))  # Get length of packet as packed bytes
+        new_packet = length + packet  # Add length as prefix
+        return new_packet  # Return packet with prefix
 
 

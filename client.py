@@ -115,6 +115,21 @@ def player_collision(x: int, y: int, width: float, height: float) -> bool:
             return True
 
 
+def move_player(p: Player) -> None:
+    xlegal = not player_collision(p.x + p.x_vel, p.y, p.width, p.height)  # Check if x-axis movement is legal
+    ylegal = not player_collision(p.x, p.y + p.y_vel, p.width, p.height)  # Check if y-axis movement is legal
+
+    if p.x_vel != 0 and p.y_vel != 0 and xlegal and ylegal:  # If the player is moving diagonally
+        p.addX(p.x_vel / 1.414)  # Slow down speed in each axis taking into account the pythagorean theorem
+        p.addY(p.y_vel / 1.414)
+
+    else:
+        if xlegal:
+            p.addX(p.x_vel)  # Move player in the x-axis
+        if ylegal:
+            p.addY(p.y_vel)  # Move player in the y-axis
+
+
 def rotate(x: int, y: int, ox: int, oy: int, theta: int) -> Tuple[float, float]:
     """
     :param x: target point's x coordinate
@@ -253,10 +268,10 @@ def game_over(player1: Player, winner: Player) -> bool:
 def MultiplayerGame():
     # Setting up connection to server
     n = Network()  # Create network instance
-    p1, game = n.getWaitingState()  # Get player 1 info from server
+    p1, game = n.load_server_data()  # Get player 1 info from server
 
     while not game.connected():
-        p1, game = n.getWaitingState()
+        p1, game = n.load_server_data()
         waiting_room()
 
     # -----------------------------------------------------------------------
@@ -282,18 +297,7 @@ def MultiplayerGame():
 
         p1.execEvents()  # Check for player events (movement, flashlight, etc)
 
-        xlegal = not player_collision(p1.x + p1.x_vel, p1.y, p1.width, p1.height)  # Check if x-axis movement is legal
-        ylegal = not player_collision(p1.x, p1.y + p1.y_vel, p1.width, p1.height)  # Check if y-axis movement is legal
-
-        if p1.x_vel != 0 and p1.y_vel != 0 and xlegal and ylegal:  # If the player is moving diagonally
-            p1.addX(p1.x_vel / 1.414)  # Slow down speed in each axis taking into account the pythagorean theorem
-            p1.addY(p1.y_vel / 1.414)
-
-        else:
-            if xlegal:
-                p1.addX(p1.x_vel)  # Move player in the x-axis
-            if ylegal:
-                p1.addY(p1.y_vel)  # Move player in the y-axis
+        move_player(p1)
 
         p2 = n.send(p1)  # Send player 1's info to server and update player 2 on screen based on server response
 
@@ -413,31 +417,8 @@ def SingleplayerGame():
         if p1.x_vel != 0 or p1.y_vel != 0:
             p1.rotation = get_rotation(p1.x_vel, p1.y_vel)
 
-        xlegal = not player_collision(p1.x + p1.x_vel, p1.y, p1.width, p1.height)  # Check if x-axis movement is legal
-        ylegal = not player_collision(p1.x, p1.y + p1.y_vel, p1.width, p1.height)  # Check if y-axis movement is legal
-
-        if p1.x_vel != 0 and p1.y_vel != 0 and xlegal and ylegal:  # If the player is moving diagonally
-            p1.addX(p1.x_vel / 1.414)  # Slow down speed in each axis taking into account the pythagorean theorem
-            p1.addY(p1.y_vel / 1.414)
-
-        else:
-            if xlegal:
-                p1.addX(p1.x_vel)  # Move player in the x-axis
-            if ylegal:
-                p1.addY(p1.y_vel)  # Move player in the y-axis
-
-        xlegal = not player_collision(p2.x + p2.x_vel, p2.y, p2.width, p2.height)  # Check if x-axis movement is legal
-        ylegal = not player_collision(p2.x, p2.y + p2.y_vel, p2.width, p2.height)  # Check if y-axis movement is legal
-
-        if p2.x_vel != 0 and p2.y_vel != 0 and xlegal and ylegal:  # If the player is moving diagonally
-            p2.addX(p2.x_vel / 1.414)  # Slow down speed in each axis taking into account the pythagorean theorem
-            p2.addY(p2.y_vel / 1.414)
-
-        else:
-            if xlegal:
-                p2.addX(p2.x_vel)  # Move player in the x-axis
-            if ylegal:
-                p2.addY(p2.y_vel)  # Move player in the y-axis
+        move_player(p1)  # Move player based on velocity
+        move_player(p2)  # Move player based on velocity
 
         # Don't show ghost to human
         # p2.show(screen)
