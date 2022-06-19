@@ -249,3 +249,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 __pycache__/network.cpython-37.pyc
+__pycache__/player.cpython-37.pyc
+__pycache__/block.cpython-37.pyc
+*.pyc

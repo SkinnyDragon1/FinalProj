@@ -1,5 +1,7 @@
+from typing import Tuple
+
 import pygame
-from shapely.geometry import box
+from shapely.geometry import box, Point
 
 
 class Block:
@@ -21,3 +23,7 @@ class Block:
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.rect)
+
+    def intersects(self, point: Tuple[int, int]):
+        p = Point(point)
+        return self.block_box.intersects(p)
