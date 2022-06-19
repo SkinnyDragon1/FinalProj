@@ -168,3 +168,6 @@ class Ghost(Player):
 
 human_spawnpoint = (0, 101)
 ghost_spawnpoint = (380, 414)
+
+default_players = [Human(human_spawnpoint[0], human_spawnpoint[1] - 100),
+                   Ghost(ghost_spawnpoint[0], ghost_spawnpoint[1] - 100)]
