@@ -1,4 +1,5 @@
 import json
+from _thread import start_new_thread
 from math import radians, cos, sin, copysign
 from random import choice
 from time import time
@@ -11,6 +12,7 @@ from shapely.geometry.polygon import Polygon
 from astar import create_grid_from_file, findpath
 from block import Block
 from button import Button
+from game import Game
 from network import Network
 from player import human_spawnpoint, ghost_spawnpoint, Player, Human, Ghost
 
@@ -265,6 +267,16 @@ def game_over(player1: Player, winner: Player) -> bool:
 
     return False  # Return false (the game should stop running)
 
+class PlayerTable:
+    p1Pointer: Player
+    p2Pointer: Player
+    gamePointer: Game
+
+def threaded_network_call(network: Network, pt: PlayerTable) -> None:
+    while True:
+        pt.p2Pointer, pt.gamePointer = network.send(pt.p1Pointer)  # Send player 1's info to server and update player 2 on screen based on server response
+        pygame.time.Clock().tick(60)  # Limit the network sending speed to 60 packet sends per second
+
 
 def MultiplayerGame() -> bool:
     # Setting up connection to server
@@ -274,6 +286,13 @@ def MultiplayerGame() -> bool:
     while not game.connected():
         p1, game = n.load_server_data()
         waiting_room()
+
+    p2, game = n.send(p1)  # Send player 1's info to server and update player 2 on screen based on server response
+    pt = PlayerTable()
+    pt.p1Pointer = p1  # Set player 1's pointer to player 1
+    pt.p2Pointer = p2  # Set player 2's pointer to player 2
+    pt.gamePointer = game  # Set game's pointer to game
+    start_new_thread(threaded_network_call, (n, pt))  # Start thread to update player 2 on screen based on server response
 
     # -----------------------------------------------------------------------
     create_map_from_file('map.json', top_border)  # Create map blocks based on file
@@ -300,7 +319,9 @@ def MultiplayerGame() -> bool:
 
         move_player(p1)
 
-        p2, game = n.send(p1)  # Send player 1's info to server and update player 2 on screen based on server response
+        pt.p1Pointer = p1  # Set player 1's pointer to player 1
+        p2, game = pt.p2Pointer, pt.gamePointer  # Get player 2's info and game info from class
+
         if game.crashed:
             print("Opponent has disconnected and game has crashed")
 
