@@ -9,6 +9,7 @@ import pygame
 from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
 
+import values
 from astar import create_grid_from_file, findpath
 from block import Block
 from button import Button
@@ -24,7 +25,7 @@ pygame.font.init()
 play_size = (800, 600)
 
 left_border = 0
-top_border = 100
+top_border = values.top_border
 right_border = left_border + play_size[0]
 bottom_border = top_border + play_size[1]
 
@@ -346,8 +347,11 @@ def MultiplayerGame() -> bool:
         if human.x_vel != 0 or human.y_vel != 0:
             human.rotation = get_rotation(human.x_vel, human.y_vel)
 
-        if p2.isHuman():
+        if values.ghost_always_shown:
+            p2.show(screen)
+        elif p2.isHuman():
             p2.show(screen)  # Show opponent only if it is the human
+
         p1.show(screen)
 
         flash_polygon = Point(-1, -1)  # Initialize arbitrary point for the flashlight polygon
@@ -376,7 +380,7 @@ def MultiplayerGame() -> bool:
         if ghost.burning and ghost.distance(human) < 120:
             ghost.timer = time()  # Reset the ghost timer (so that he stays visible on screen)
 
-        if time() - ghost.timer > 2 and ghost.burning:  # If the ghost has been burning for longer than 2 seconds
+        if time() - ghost.timer > values.ghost_visibility_timer and ghost.burning:  # If the ghost has been burning for longer than 2 seconds
             ghost.burning = False  # Stop burning
             ghost.speed = 3  # Revert to normal speed
 
@@ -463,7 +467,7 @@ def SingleplayerGame():
         move_player(p2)  # Move player based on velocity
 
         # Don't show ghost to human
-        if ghost_display:
+        if values.ghost_always_shown or ghost_display:
             p2.show(screen)
         p1.show(screen)
 
@@ -493,7 +497,7 @@ def SingleplayerGame():
         if p2.burning and p2.distance(p1) < 120:
             p2.timer = time()  # Reset the ghost timer (so that he stays visible on screen)
 
-        if time() - p2.timer > 2 and p2.burning:  # If the ghost has been burning for longer than 2 seconds
+        if time() - p2.timer > values.ghost_visibility_timer and p2.burning:  # If the ghost has been burning for longer than 2 seconds
             p2.burning = False  # Stop burning
             p2.speed = 3  # Revert to normal speed
 

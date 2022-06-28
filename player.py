@@ -3,6 +3,7 @@ import pygame
 from time import time
 from shapely.geometry import box
 from typing import Dict, List, Tuple
+import values
 
 pygame.init()
 ghost_dash = pygame.mixer.Sound("sounds/Ghost Dash.wav")
@@ -18,7 +19,7 @@ class Player:
         self.box = box(self.x, self.y, self.x + self.width, self.y + self.height)
         self.x_vel = 0
         self.y_vel = 0
-        self.speed = 3
+        self.speed = values.player_speed
         self.timer = time()
 
         self._actionkeys: Dict[str, any] = {
@@ -125,12 +126,12 @@ class Ghost(Player):
         self.timer = time()  # Update time since last burn
         self.burning = True
         self.visible = True
-        self.speed = 4  # Increase speed
+        self.speed = values.ghost_burn_speed  # Increase speed
 
     def dash(self, d):
         if d:
             if not self.dashing:  # If not already dashing
-                self.speed = 5  # Update speed
+                self.speed = values.ghost_dash_speed  # Update speed
                 self.dashing = True
                 self.visible = True
                 pygame.mixer.Sound.play(ghost_dash)  # Play sound effect
@@ -138,7 +139,7 @@ class Ghost(Player):
             self.dashing = False
             if not self.burning:
                 self.visible = False
-                self.speed = 3
+                self.speed = values.player_speed
 
     def execEvents(self):
         super().execEvents()
