@@ -52,6 +52,7 @@ def threaded_client(conn: socket.socket, player, game_id) -> None:
             conn.send(prefixed_packet(packet))  # Keep pinging the first player until game is ready
             sleep(0.5)  # Sleep for half a second in order to not DOS player
         except ConnectionAbortedError:
+
             conn.close()  # Close connection
             print(f"Player {player} in game {game_id} has disconnected")
             games[game_id].crashed = True  # Update game as crashed
@@ -60,7 +61,7 @@ def threaded_client(conn: socket.socket, player, game_id) -> None:
     try:
         packet = pickle.dumps((players[player], games[game_id]))
         print(f'packet: {packet}      being sent to player {player}')
-        conn.send(prefixed_packet(packet))  # Send corrosponding player data to each player
+        conn.send(prefixed_packet(packet))  # Send corresponding  player data to each player
     except ConnectionAbortedError:
         conn.close()  # Close connection
         print(f"Player {player} in game {game_id} has disconnected")

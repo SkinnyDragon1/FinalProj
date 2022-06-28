@@ -24,12 +24,22 @@ class Network:
 
     def load_server_data(self) -> (Player, Game):
         # Receive data from server
-        prefix = self.client.recv(4, socket.MSG_WAITALL)
+        try:
+            prefix = self.client.recv(4, socket.MSG_WAITALL)  # Recieve first 4 bytes
+        except OSError:
+            print("Server is not online")
+            return None
+
         print(prefix)
 
         length = unpack('!I', prefix)[0]  # Get length of incoming packet
 
-        recieved = self.client.recv(length)  # Recieve more bytes
+        try:
+            recieved = self.client.recv(length, socket.MSG_WAITALL)  # Recieve more bytes
+        except OSError:
+            print("Server is not online")
+            return None
+
         print(len(recieved), recieved)
 
         return pickle.loads(recieved)
