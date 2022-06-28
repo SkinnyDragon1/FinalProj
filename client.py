@@ -13,7 +13,6 @@ from block import Block
 from button import Button
 from network import Network
 from player import human_spawnpoint, ghost_spawnpoint, Player, Human, Ghost
-import _thread
 
 # Initializing Pygame
 pygame.init()
