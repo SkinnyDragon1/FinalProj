@@ -10,7 +10,7 @@ from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
 
 import values
-from astar import create_grid_from_file, findpath
+from astar import create_grid_from_file, findpath, draw_path
 from block import Block
 from button import Button
 from game import Game
@@ -459,6 +459,9 @@ def SingleplayerGame():
 
         p2.followPath(path, top_border)  # Follow current path
         p2.dash(should_dash)
+
+        if values.draw_astar_path: # Draw the path if the user wants to
+            draw_path(screen, grid_1)
 
         if p1.x_vel != 0 or p1.y_vel != 0:
             p1.rotation = get_rotation(p1.x_vel, p1.y_vel)

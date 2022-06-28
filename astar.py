@@ -17,6 +17,12 @@ class Spot:
         self.total_rows = total_rows
         self.total_columns = total_columns
 
+    def draw(self, win):
+        if self.is_barrier():
+            pygame.draw.rect(win, (0, 0, 0), pygame.Rect(self.x, self.y + 100, self.width, self.height))
+        if self.state == 'path':
+            pygame.draw.rect(win, (128, 0, 128), pygame.Rect(self.x, self.y + 100, self.width, self.height))
+
     def get_pos(self):
         return self.row, self.col
 
@@ -75,6 +81,16 @@ def reconstruct_path(came_from: Dict, current: Spot):
         current = came_from[current]
 
     return path_list
+
+
+def draw_path(win, grid):
+
+    for row in grid:
+        for spot in row:
+            if spot.state == 'path':
+                spot.draw(win)
+
+    pygame.display.update()
 
 
 def algorithm(grid: List, start: Spot, end: Spot):
