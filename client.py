@@ -10,7 +10,7 @@ from shapely.geometry import Point, box
 from shapely.geometry.polygon import Polygon
 
 import values
-from astar import create_grid_from_file, findpath
+from astar import create_grid_from_file, findpath, draw_path
 from block import Block
 from button import Button
 from game import Game
@@ -402,6 +402,7 @@ def SingleplayerGame():
     create_map_from_file('map.json', top_border)  # Create map blocks based on file
     grid_1 = create_grid_from_file('map.json', 800, 15, 20)  # Create a grid for pathfinding based on file
     grid_2 = create_grid_from_file('map.json', 800, 30, 40)  # Create a more detailed grid for specific cases
+    cg = grid_1
     ticknum = 0  # Keep track of the number of ticks
     pygame.mixer.music.stop()  # Stop previous music
     pygame.mixer.music.unload()  # Unload previous track
@@ -442,9 +443,11 @@ def SingleplayerGame():
                 if ticknum % (FRAMERATE / 0.2) == 0:  # Once every 5 seconds
                     lr, tb = choice([right_border, left_border]), choice([bottom_border, top_border]) - top_border
                 path = findpath(grid_1, ghost_cors, (lr, tb))
+                cg = grid_1
 
             else:
                 path = findpath(grid_1, ghost_cors, (p1.x, p1.y - top_border))
+                cg = grid_1
                 should_dash = False  # Set default assumption (ghost shouldn't be dashing)
 
                 if len(path) >= 15:
@@ -454,9 +457,13 @@ def SingleplayerGame():
                     path = findpath(grid_2, (p2.x + p2.width / 2, p2.y - top_border + p2.height / 2),
                                     (p1.x, p1.y - top_border))
 
+                    cg = grid_2
+
                     if len(path) >= 30:
                         should_dash = True  # If the ghost is far from the player, he should dash
 
+        if values.draw_astar_path:
+            draw_path(screen, cg)
         p2.followPath(path, top_border)  # Follow current path
         p2.dash(should_dash)
 

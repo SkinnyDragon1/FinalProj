@@ -4,6 +4,7 @@ import pygame
 from shapely.geometry import box, Point
 from typing import List, Tuple, Dict
 
+
 class Spot:
     def __init__(self, row, col, width, height, total_rows, total_columns):
         self.row = row
@@ -16,6 +17,12 @@ class Spot:
         self.height = height
         self.total_rows = total_rows
         self.total_columns = total_columns
+
+    def draw(self, win):
+        if self.is_barrier():
+            pygame.draw.rect(win, (0, 0, 0), pygame.Rect(self.x, self.y + 100, self.width, self.height))
+        if self.state == 'path':
+            pygame.draw.rect(win, (128, 0, 128), pygame.Rect(self.x, self.y + 100, self.width, self.height))
 
     def get_pos(self):
         return self.row, self.col
@@ -174,6 +181,37 @@ def create_grid_from_file(filename: str, width: int, rows: int, columns: int):
     return grid
 
 
+def draw_grid(win, rows, columns, width):
+    gap = width // columns
+    for i in range(rows):
+        pygame.draw.line(win, (128, 128, 128), (0, i * gap), (width, i * gap))
+    for j in range(columns):
+        pygame.draw.line(win, (128, 128, 128), (j * gap, 0), (j * gap, width))
+
+
+def draw_path(win, grid):
+    for row in grid:
+        for spot in row:
+            if spot.state == 'path':
+                spot.draw(win)
+
+    pygame.display.update()
+
+
+def draw(win, grid, rows, columns, width):
+    win.fill((255, 255, 255))
+
+    draw_grid(win, rows, columns, width)
+    for row in grid:
+        for spot in row:
+            spot.draw(win)
+
+    pygame.display.update()
+
+    draw_path(win, grid)
+    pygame.display.update()
+
+
 def coords_to_spot(grid, coordinates):
     a, b = coordinates
     p = Point(a, b)
@@ -183,6 +221,7 @@ def coords_to_spot(grid, coordinates):
             spot_box = box(spot.x, spot.y, spot.x + spot.width, spot.y + spot.height)
             if spot_box.intersects(p):
                 return spot
+
 
 def findpath(grid, p1: Tuple[int, int], p2: Tuple[int, int]):
     start = coords_to_spot(grid, p1)
