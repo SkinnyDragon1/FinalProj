@@ -40,7 +40,7 @@ class Network:
             print("Server is not online")
             return None
 
-        print(len(recieved), recieved)
+        print("Recieved packet of size: ", len(recieved))
 
         return pickle.loads(recieved)
 

@@ -38,7 +38,7 @@ def load_prefixed_data(conn: socket.socket):
     length = unpack('!I', prefix)[0]  # Get length of incoming packet
 
     recieved = conn.recv(length)  # Recieve more bytes
-    print(len(recieved), recieved)
+    print("Recieved packet of size: ", len(recieved))
 
     return pickle.loads(recieved)
 
@@ -48,7 +48,7 @@ def threaded_client(conn: socket.socket, player, game_id) -> None:
     while not games[game_id].connected():
         try:
             packet = pickle.dumps((players[player], games[game_id]))  # Set up packet for sending
-            print(f'packet: {packet}      being sent to player {player}')
+            print(f'packet being sent to player {player}')
             conn.send(prefixed_packet(packet))  # Keep pinging the first player until game is ready
             sleep(0.5)  # Sleep for half a second in order to not DOS player
         except ConnectionAbortedError:
@@ -60,7 +60,7 @@ def threaded_client(conn: socket.socket, player, game_id) -> None:
 
     try:
         packet = pickle.dumps((players[player], games[game_id]))
-        print(f'packet: {packet}      being sent to player {player}')
+        print(f'packet being sent to player {player}')
         conn.send(prefixed_packet(packet))  # Send corresponding  player data to each player
     except ConnectionAbortedError:
         conn.close()  # Close connection
